@@ -6,7 +6,7 @@
  * Date: 19/10/2018
  * Time: 12:27 PM
  */
-include "../autoload.php";
+include "autoload.php";
 
 use PHPUnit\Framework\TestCase;
 

@@ -7,8 +7,7 @@
  */
 spl_autoload_register(function ($class) {
 
-    $dir = __DIR__."/".str_replace("\\","/",$class).".php";
-
+    $dir = __DIR__ . "/src/" .str_replace("\\","/",$class).".php";
 
     if(file_exists($dir))
     {

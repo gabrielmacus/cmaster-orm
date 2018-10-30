@@ -15,8 +15,6 @@ use db\IPagination;
 use exceptions\DAOException;
 use models\CoreModel;
 use models\ICoreModel;
-use tests\service_order\ServiceOrder;
-use tests\tag\Tag;
 
 //TODO: CREATE multiple
 abstract class CoreDAO implements ICoreDAO
