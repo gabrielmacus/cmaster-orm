@@ -158,4 +158,69 @@ interface ICoreDAO
      */
     public function processItemToRelate(&$item,ICoreDAO $dao = null);
 
+    /** Hooks**/
+
+    /**
+     * Funcion ejecutada despues de ser guardado un item en la base de datos.
+     * @param ICoreModel $model Item guardado en la base de datos
+     * @return void
+     */
+    public function afterCreate(ICoreModel &$model);
+    /**
+     * Funcion ejecutada antes de ser guardado un item en la base de datos.
+     * @param ICoreModel $model Item a ser guardado en la base de datos
+     * @return void
+     */
+    public function beforeCreate(ICoreModel &$model);
+
+    /**
+     * Funcion ejecutada luego de leer elementos de la base de datos.
+     * @param array $items Elementos recuperados de la base de datos
+     * @return void
+     */
+    public function afterRead(array &$items);
+
+    /**
+     * Funcion que se ejecuta antes de leer elementos de la base de datos.<br>
+     * Puede ser utilizada para modificar los parámetros
+     * @param array $params Parámetros de lectura
+     * @return void
+     */
+    public function beforeRead(array &$params = null);
+
+    /**
+     * Funcion que se ejecuta después de actualizar elementos de la base de datos
+     * @param ICoreModel $model Objeto a actualizar
+     * @return void
+     */
+    public function afterUpdate(ICoreModel &$model);
+    /**
+     * Funcion que se ejecuta antes de actualizar elementos de la base de datos
+     * @param ICoreModel $model Objeto actualizado
+     * @param array $where Parámetros de actualización
+     * @return void
+     */
+    public function beforeUpdate(ICoreModel &$model,array &$where);
+    /**
+     * Funcion que se ejecuta después eliminar un elemento de la base de datos por su id
+     * @param mixed $id Id eliminado
+     * @param bool $softDelete Indica si fue eliminado de la base de datos, o seteado el campo deleted_at
+     * @return void
+     */
+    public function afterDeleteById($id,bool $softDelete);
+
+    /**
+     * Funcion que se ejecuta antes de eliminar un elemento de la base de datos por su id
+     * @param mixed $id Id a eliminar
+     * @param bool $softDelete Indica si fue eliminado de la base de datos, o seteado el campo deleted_at
+     * @return void
+     */
+    public function beforeDeleteById($id,bool $softDelete);
+
+
+
+
+
+
+
 }

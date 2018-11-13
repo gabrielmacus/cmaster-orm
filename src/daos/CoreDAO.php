@@ -8,13 +8,12 @@
 
 namespace daos;
 
-
-
 use db\IConnection;
 use db\IPagination;
 use exceptions\DAOException;
 use models\CoreModel;
 use models\ICoreModel;
+
 
 //TODO: CREATE multiple
 abstract class CoreDAO implements ICoreDAO
@@ -299,12 +298,12 @@ abstract class CoreDAO implements ICoreDAO
     public function read(array $params)
     {
        $params["where"][] = ["prop"=>"deleted_at","value"=>NULL,"operator"=>"IS"];
-
        $this->processPagination($params);
-
+       $this->beforeRead($params);
        $this->execute($this->processQuery($params));
-
-        return $this->getItems();
+       $items =  $this->getItems();
+       $this->afterRead($items);
+        return $items;
 
     }
 
@@ -370,6 +369,7 @@ abstract class CoreDAO implements ICoreDAO
 
         if($rowCount)
         {
+            $fetchPosition = 0;
             while ($row = $statement->fetch(\PDO::FETCH_ASSOC))
             {
 
@@ -383,6 +383,10 @@ abstract class CoreDAO implements ICoreDAO
                 }
 
                 $model->arrayToObject($arr);
+
+                $model->onFetch($fetchPosition);
+                $fetchPosition++;
+
                 $this->items[] = $model;
             }
         }
@@ -392,19 +396,24 @@ abstract class CoreDAO implements ICoreDAO
 
     public function readAll()
     {
-
+        $this->beforeRead();
         $query = $this->processQuery(["where"=>[["prop"=>"deleted_at","value"=>NULL,"operator"=>"IS"]]]);
         $this->execute($query);
 
-        return $this->getItems();
+        $items = $this->getItems();
+
+        $this->afterRead($items);
+
+        return $items;
     }
 
     public function readById($id)
     {
-
-
-        $this->execute($this->processQuery(["where"=>[["prop"=>"id","value"=>$id],["prop"=>"deleted_at","value"=>NULL,"operator"=>"IS"]]]));
+        $params =["where"=>[["prop"=>"id","value"=>$id],["prop"=>"deleted_at","value"=>NULL,"operator"=>"IS"]]];
+        $this->beforeRead($params);
+        $this->execute($this->processQuery($params));
         $items = $this->getItems();
+        $this->afterRead($items);
         return reset($items);
     }
 
@@ -504,11 +513,15 @@ abstract class CoreDAO implements ICoreDAO
 
     public function create(ICoreModel &$model)
     {
+        $model->created_at = date("Y-m-d H:i:s");
+
+        $this->beforeCreate($model);
+
         $query =$this->processUpsertDelete(["model"=>$model,"action"=>"INSERT"]);
 
         $id = $this->execute($query);
 
-        //Hago esto para que me conserve los elementos que se poblan exteramente (asociados)
+        //Hago esto para que me conserve los elementos que se pueblan externamente (asociados)
         $newModel =$this->readById($id);
 
         $model->id = $newModel->id;
@@ -522,6 +535,8 @@ abstract class CoreDAO implements ICoreDAO
             $model->$key = $item;
         }
 
+        $this->afterCreate($model);
+
         return $id;
     }
 
@@ -531,7 +546,12 @@ abstract class CoreDAO implements ICoreDAO
         {
             throw new DAOException("El objeto a actualizar no tiene un id especificado");
         }
+
+        $model->updated_at = date("Y-m-d H:i:s");
+
         $where = $where ?? [["prop"=>"id","value"=>$model->id,"operator"=>"="]];
+
+        $this->beforeUpdate($model,$where);
 
         $query =$this->processUpsertDelete(["model"=>$model,"where"=>$where,"action"=>"UPDATE"]);
 
@@ -542,6 +562,7 @@ abstract class CoreDAO implements ICoreDAO
             $model->$key = $item;
         }
 
+        $this->afterUpdate($model);
 
         $this->execute($query);
 
@@ -549,6 +570,8 @@ abstract class CoreDAO implements ICoreDAO
 
     public function deleteById($id,bool $softDelete = true)
     {
+        $this->beforeDeleteById($id,$softDelete);
+
         if(!$softDelete)
         {
             $query =$this->processUpsertDelete(["where"=>[["prop"=>"id","value"=>$id]],"action"=>"DELETE"]);
@@ -565,6 +588,9 @@ abstract class CoreDAO implements ICoreDAO
         }
 
         $this->execute($query);
+
+        $this->afterDeleteById($id,$softDelete);
+
     }
 
     public function &populate(string $property)
@@ -931,6 +957,51 @@ abstract class CoreDAO implements ICoreDAO
 
          return $savedRelationships;
     }
+
+    /** Hooks **/
+
+    public function afterCreate(ICoreModel &$model)
+    {
+        // TODO: Implement afterCreate() method.
+    }
+
+    public function beforeCreate(ICoreModel &$model)
+    {
+        // TODO: Implement beforeCreate() method.
+    }
+
+    public function afterRead(array &$items)
+    {
+        // TODO: Implement afterRead() method.
+    }
+
+    public function beforeRead(array &$params = null)
+    {
+        // TODO: Implement beforeRead() method.
+    }
+
+    public function afterUpdate(ICoreModel &$model)
+    {
+        // TODO: Implement afterUpdate() method.
+    }
+
+    public function beforeUpdate(ICoreModel &$model, array &$where)
+    {
+        // TODO: Implement beforeUpdate() method.
+    }
+
+    public function afterDeleteById($id, bool $softDelete)
+    {
+        // TODO: Implement afterDeleteById() method.
+    }
+
+    public function beforeDeleteById($id, bool $softDelete)
+    {
+        // TODO: Implement beforeDeleteById() method.
+    }
+
+    /** End hooks */
+
 
 
 }

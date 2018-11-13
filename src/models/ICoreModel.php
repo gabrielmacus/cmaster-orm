@@ -37,7 +37,12 @@ interface ICoreModel
 
     public function setRelationshipsData(array $data);
 
-
-
+    /** Hooks **/
+    /**
+     * Función ejecutada al iterar el elemento durante su lectura
+     * @param int $position Orden en el que se itera el elemento
+     * @return void
+     */
+    public function onFetch(int $position);
 
 }

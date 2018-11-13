@@ -6,7 +6,7 @@
  * Date: 19/10/2018
  * Time: 12:27 PM
  */
-include "autoload.php";
+include "../autoload.php";
 
 use PHPUnit\Framework\TestCase;
 
@@ -1254,6 +1254,196 @@ class DAOTest extends TestCase
 
 
     }
+
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testHookCreate($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+        $customer = new \tests\customer\Customer();
+        $customer->name ="After Create";
+        $customer->surname = "Wade";
+        $customer->age = 44;
+        $customer->zip_code = 4000;
+        $customer->email = "a@a.com";
+
+        $customerDAO->create($customer);
+
+        $this->assertEquals($customer->name,"Changed on After Create");
+        $this->assertEquals($customer->zip_code,3999);
+    }
+
+
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testHookRead($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+        $customer = new \tests\customer\Customer();
+        $customer->name ="After Read";
+        $customer->surname = "Wade";
+        $customer->age = 44;
+        $customer->zip_code = 4000;
+        $customer->email = "a@a.com";
+        $customerDAO->create($customer);
+
+        $customer = new \tests\customer\Customer();
+        $customer->name ="After Read";
+        $customer->surname = "Bobby";
+        $customer->age = 23;
+        $customer->zip_code = 4000;
+        $customer->email = "a@a.com";
+        $customerDAO->create($customer);
+
+        //After read
+        $customerDAO->readAll();
+        $items = $customerDAO->getItems();
+        $this->assertEquals($items[0]->name,"Changed on After Read");
+        $this->assertEquals($items[0]->surname,"Wade");
+
+        $this->assertEquals($items[1]->name,"Changed on After Read");
+        $this->assertEquals($items[1]->surname,"Bobby");
+
+        $customer = $customerDAO->readById(2);
+        $this->assertEquals($customer->name,"Changed on After Read");
+        $this->assertEquals($customer->surname,"Bobby");
+
+        //Before read
+        $customerDAO->read(["where"=>[["prop"=>"replace_by_surname","value"=>"Bobby"]]]);
+        $this->assertEquals($customerDAO->getItems()[0]->surname,"Bobby");
+
+
+    }
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testHookUpdate($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+        $customer = new \tests\customer\Customer();
+        $customer->name ="After Update";
+        $customer->surname = "Wade";
+        $customer->age = 44;
+        $customer->zip_code = 5000;
+        $customer->email = "a@a.com";
+        $customerDAO->create($customer);
+
+        $customer->zip_code = 10000;
+        $customerDAO->update($customer);
+
+        $this->assertEquals($customer->zip_code,20000);
+        $this->assertEquals($customer->name,"Changed on After Update");
+
+
+    }
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testHookDelete($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+        $customer = new \tests\customer\Customer();
+        $customer->name ="Bob";
+        $customer->surname = "Wade";
+        $customer->age = 44;
+        $customer->zip_code = 5000;
+        $customer->email = "a@a.com";
+        $customerDAO->create($customer);
+        $customerDAO->deleteById($customer->id);
+
+        $this->assertEquals(file_get_contents("created_on_after_delete_by_id.txt"),"ok 1");
+        $this->assertEquals(file_get_contents("created_on_before_delete_by_id.txt"),"ok 2");
+
+    }
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testHookOnFetch($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+        for($i=0;$i<3;$i++)
+        {
+            $customer = new \tests\customer\Customer();
+            $customer->name ="On fetch";
+            $customer->surname = "Wade";
+            $customer->age = 44;
+            $customer->zip_code = 5000;
+            $customer->email = "a@a.com";
+            $customerDAO->create($customer);
+        }
+        $customerDAO->readAll();
+
+        foreach ($customerDAO->getItems() as $k => $item)
+        {
+            $this->assertEquals($item->age,$k);
+        }
+
+
+
+    }
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testUpdatedAtCreatedAt($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+        $customer = new \tests\customer\Customer();
+        $customer->name ="On fetch";
+        $customer->surname = "Wade";
+        $customer->age = 44;
+        $customer->zip_code = 5000;
+        $customer->email = "a@a.com";
+        $customerDAO->create($customer);
+
+        $date = new DateTime($customer->created_at);
+        $now = new DateTime();
+        $this->assertEquals($date->format("d-m-Y H:i"),$now->format("d-m-Y H:i"));
+        $this->assertEquals($customer->updated_at,null);
+
+        $customer->age = 45;
+        $customerDAO->update($customer);
+        $customer = $customerDAO->readById(1);
+        $date = new DateTime($customer->updated_at);
+
+        $this->assertEquals($date->format("d-m-Y H:i"),$now->format("d-m-Y H:i"));
+
+
+    }
+
+
+
 
 
     public function daoProvider()

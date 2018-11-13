@@ -8,6 +8,7 @@
  */
 namespace exceptions;
 
+
 class DAOException extends \Exception
 {
 

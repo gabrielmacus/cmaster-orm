@@ -7,6 +7,7 @@
  */
 
 namespace models;
+
 /**
  * Clase base para los modelos del sistema. Por normal general no deberia usar argumentos en el constructor.<br>
  * Si estoy asociando un elemento no existente a otro elemento, puedo guardar datos de la relacion utilizando una variable dinámica con el siguiente formato: relation_data_{nombre de la variable}
@@ -68,6 +69,11 @@ abstract class CoreModel implements ICoreModel,\JsonSerializable
     function jsonSerialize()
     {
         return  get_object_vars($this);
+    }
+
+    public function onFetch(int $position)
+    {
+        // TODO: Implement onFetch() method.
     }
 
 

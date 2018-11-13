@@ -7,6 +7,7 @@
  */
 
 namespace db;
+
 /**
  * Clase de conexión a base de datos MySql
  * Class MySqlConnection

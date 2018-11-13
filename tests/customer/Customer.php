@@ -24,4 +24,16 @@ class Customer extends CoreModel
      * @external_field customer
      */
     public $serviceOrders = [];
+
+    public function onFetch(int $position)
+    {
+        parent::onFetch($position);
+
+        if($this->name =="On fetch")
+        {
+            $this->age = $position;
+        }
+
+
+    }
 }
