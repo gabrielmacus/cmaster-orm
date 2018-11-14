@@ -607,7 +607,27 @@ class DAOTest extends TestCase
 
 
     }
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     */
+    public function testProcessItemToRelatePassingArray($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO)
+    {
+        //Paso un array en lugar de un objeto
+        //Muchas ordenes de servicio pueden tener muchas etiquetas
+        $tag =  ["id"=>"511","name"=>"Carga Superior"];
+        $id = $serviceOrderDAO->processItemToRelate($tag,$tagDAO);
+        $this->assertEquals($id,511);
 
+        $tag =  ["id"=>"1900","name"=>"Carga Inferior"];
+        $id = $serviceOrderDAO->processItemToRelate($tag,$tagDAO);
+        $this->assertEquals($id,1900);
+
+
+    }
 
     /**
      * @dataProvider daoProvider

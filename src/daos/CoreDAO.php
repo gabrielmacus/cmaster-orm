@@ -779,6 +779,16 @@ abstract class CoreDAO implements ICoreDAO
    public function processItemToRelate(&$item,ICoreDAO $dao = null)
     {
 
+        if(is_array($item) && $dao)
+        {
+            //Si es un array, intento convertirlo al objeto del tipo correspondiente
+            $model = $dao->getModel();
+            $model->arrayToObject($item);
+            $item = $model;
+
+        }
+
+
         if(!is_a($item,CoreModel::class) && !is_numeric($item))
         {
             throw new DAOException("El elemento a asociar no es válido. Debe ser un id u objeto del tipo ".CoreModel::class);
