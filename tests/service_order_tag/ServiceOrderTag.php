@@ -9,9 +9,9 @@
 namespace tests\service_order_tag;
 
 
-use models\CoreModel;
+use models\LinkModel;
 
-class ServiceOrderTag extends CoreModel
+class ServiceOrderTag extends LinkModel
 {
 
     public $tag;

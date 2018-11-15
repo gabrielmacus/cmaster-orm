@@ -13,9 +13,9 @@ use db\IPagination;
 use exceptions\DAOException;
 use models\CoreModel;
 use models\ICoreModel;
+use models\LinkModel;
 
 
-//TODO: CREATE multiple
 abstract class CoreDAO implements ICoreDAO
 {
 
@@ -627,8 +627,12 @@ abstract class CoreDAO implements ICoreDAO
 
             if(count($in) > 0)
             {
-                $query= ["where"=>[["prop"=>$this->getResourceName(),"value"=>$in,"operator"=>"IN"]]];
+
+                $query= ["where"=>[["prop"=>$this->getResourceName(),"value"=>$in,"operator"=>"IN"], ["prop"=>"property","value"=>$property,"operator"=>"="]]];
+
                 $linkItems  = $LinkDAO->read($query);
+
+
                 $linkMap = [];
                 $in = [];
                 $externalResourceName = $ExternalDAO->getResourceName();
@@ -649,6 +653,9 @@ abstract class CoreDAO implements ICoreDAO
                     {
                         foreach ($linkMap[$item->id] as $value)
                         {
+                            //Seteo el id de la relacion en el objeto relacionado para evitar relaciones duplicadas al actualizar el objeto relacionado a este
+                            $item->relation_data_id = $value["link"]->id;
+
                             $map[$value["resource"]]->$property[] = $item;
                             $rd = $map[$value["resource"]]->getRelationshipsData();
                             $rd[$property][$item->id] = $value["link"];
@@ -844,10 +851,18 @@ abstract class CoreDAO implements ICoreDAO
                      //FIXME: Arreglar esto!
                      eval('$LinkDAO = new $LinkDAO($this->connection);');
 
+
                      foreach ($value as $k=>$v)
                      {
                          $toDelete = false;
                          $Link = $LinkDAO->getModel();
+
+                         if(!is_a($Link,LinkModel::class))
+                         {
+                             throw new DAOException("El objeto link debe ser del tipo ".LinkModel::class);
+                         }
+
+
 
                          foreach ($v as $h => $i)
                          {
@@ -880,7 +895,6 @@ abstract class CoreDAO implements ICoreDAO
                              }
                          }
 
-
                          if($toDelete)
                          {
                            //Chequeo si el objeto no es del tipo correcto
@@ -899,10 +913,10 @@ abstract class CoreDAO implements ICoreDAO
                              $localResource =  $this->getResourceName();
                              $Link->$externalResource = $this->processItemToRelate($v,$ExternalDAO);
                              $Link->$localResource = $model->id;
+                             $Link->property = $key;
 
                              if(empty($Link->id))
                              {
-
                                  $LinkDAO->create($Link);
                              }
                              else{

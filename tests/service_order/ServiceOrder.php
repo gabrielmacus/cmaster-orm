@@ -23,4 +23,13 @@ class ServiceOrder extends CoreModel
      * @link_dao tests\service_order_tag\ServiceOrderTagDAO
      */
     public $tags =[];
+    /**
+     * @dao tests\tag\TagDAO
+     * @link_dao tests\service_order_tag\ServiceOrderTagDAO
+     */
+    public $tags2 =[];
+
+
+
+
 }

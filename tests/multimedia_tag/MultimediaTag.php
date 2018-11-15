@@ -9,8 +9,9 @@
 namespace tests\multimedia_tag;
 
 
-use models\CoreModel;
- class MultimediaTag extends CoreModel
+ use models\LinkModel;
+
+ class MultimediaTag extends LinkModel
 {
 
     public $multimedia;

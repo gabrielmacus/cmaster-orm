@@ -771,8 +771,6 @@ class DAOTest extends TestCase
     }
 
 
-
-
     /**
      * @dataProvider daoProvider
      * @param $customerDAO \tests\customer\CustomerDAO
@@ -933,9 +931,6 @@ class DAOTest extends TestCase
     }
 
 
-
-
-
     /**
      * @dataProvider daoProvider
      * @param $customerDAO \tests\customer\CustomerDAO
@@ -1032,6 +1027,7 @@ class DAOTest extends TestCase
 
 
     }
+
 
 
     /**
@@ -1176,57 +1172,68 @@ class DAOTest extends TestCase
         $serviceOrderTag = new \tests\service_order_tag\ServiceOrderTag();
         $serviceOrderTag->service_order = 1;
         $serviceOrderTag->tag = 8;
+        $serviceOrderTag->property = 'tags';
         $serviceOrderTagDAO->create($serviceOrderTag);
 
         $serviceOrderTag = new \tests\service_order_tag\ServiceOrderTag();
         $serviceOrderTag->service_order = 2;
         $serviceOrderTag->tag = 8;
+        $serviceOrderTag->property = 'tags';
         $serviceOrderTagDAO->create($serviceOrderTag);
 
         $serviceOrderTag = new \tests\service_order_tag\ServiceOrderTag();
         $serviceOrderTag->service_order = 3;
         $serviceOrderTag->tag = 8;
+        $serviceOrderTag->property = 'tags';
         $serviceOrderTagDAO->create($serviceOrderTag);
 
 
         $serviceOrderTag = new \tests\service_order_tag\ServiceOrderTag();
         $serviceOrderTag->service_order = 1;
         $serviceOrderTag->tag = 7;
+        $serviceOrderTag->property = 'tags';
         $serviceOrderTagDAO->create($serviceOrderTag);
 
         $serviceOrderTag = new \tests\service_order_tag\ServiceOrderTag();
         $serviceOrderTag->service_order = 1;
         $serviceOrderTag->tag = 6;
+        $serviceOrderTag->property = 'tags';
         $serviceOrderTagDAO->create($serviceOrderTag);
 
         $serviceOrderTag = new \tests\service_order_tag\ServiceOrderTag();
         $serviceOrderTag->service_order = 2;
         $serviceOrderTag->tag = 5;
+        $serviceOrderTag->property = 'tags';
         $serviceOrderTagDAO->create($serviceOrderTag);
 
         $serviceOrderTag = new \tests\service_order_tag\ServiceOrderTag();
         $serviceOrderTag->service_order = 2;
         $serviceOrderTag->tag = 4;
+        $serviceOrderTag->property = 'tags';
         $serviceOrderTagDAO->create($serviceOrderTag);
 
         $serviceOrderTag = new \tests\service_order_tag\ServiceOrderTag();
         $serviceOrderTag->service_order = 2;
         $serviceOrderTag->tag = 3;
+        $serviceOrderTag->property = 'tags';
         $serviceOrderTagDAO->create($serviceOrderTag);
 
         $serviceOrderTag = new \tests\service_order_tag\ServiceOrderTag();
         $serviceOrderTag->service_order = 2;
         $serviceOrderTag->tag = 2;
+        $serviceOrderTag->property = 'tags';
         $serviceOrderTagDAO->create($serviceOrderTag);
 
         $serviceOrderTag = new \tests\service_order_tag\ServiceOrderTag();
         $serviceOrderTag->service_order = 3;
         $serviceOrderTag->tag = 1;
+        $serviceOrderTag->property = 'tags';
         $serviceOrderTagDAO->create($serviceOrderTag);
 
         $items = $serviceOrderDAO->readAll();
-        $serviceOrderDAO->populate("tags")->populate("images");
 
+
+        $serviceOrderDAO->populate("tags")->populate("images");
 
         $this->assertEquals($items[0]->tags[0]->id,6);
         $this->assertCount(2,$items[0]->tags[0]->images);
@@ -1462,6 +1469,86 @@ class DAOTest extends TestCase
 
     }
 
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     */
+    public function testGetRelationshipIdInRelatedItem($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO)
+    {
+
+        $serviceOrder = new \tests\service_order\ServiceOrder();
+        $serviceOrder->description = 'Demo 123';
+
+        $tag = new \tests\tag\Tag();
+        $tag->name = "Tag 3";
+        $tagDAO->create($tag);
+        $serviceOrder->tags[]= $tag;
+
+        $tag = new \tests\tag\Tag();
+        $tag->name = "Tag 2";
+        $tagDAO->create($tag);
+        $serviceOrder->tags[]= $tag;
+
+        $serviceOrderDAO->create($serviceOrder);
+        $serviceOrderDAO->readAll();
+        $serviceOrderDAO->populate("tags");
+
+        foreach ($serviceOrderDAO->getItems()[0]->tags as $tag)
+        {
+            if($tag->name == "Tag 3")
+            {
+                $this->assertEquals($tag->relation_data_id,1);
+            }
+            elseif($tag->name == "Tag 2")
+            {
+                $this->assertEquals($tag->relation_data_id,2);
+            }
+
+
+        }
+
+    }
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     */
+    public function testRelateSameTypeObjectsTwoDifferentProperties($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO)
+    {
+
+        $serviceOrder = new \tests\service_order\ServiceOrder();
+        $serviceOrder->description = 'Demo 123';
+
+        $tag = new \tests\tag\Tag();
+        $tag->name = "Tag 3";
+        $serviceOrder->tags[] =$tag;
+        $serviceOrder->tags2[]=$tag;
+
+        $tag = new \tests\tag\Tag();
+        $tag->name = "Tag 2";
+        $serviceOrder->tags[]=$tag;
+        $serviceOrder->tags2[]=$tag;
+
+        $tag = new \tests\tag\Tag();
+        $tag->name = "Tag 5";
+        $serviceOrder->tags[] = $tag;
+
+        $serviceOrderDAO->create($serviceOrder);
+        $serviceOrderDAO->readAll();
+        $items = $serviceOrderDAO->getItems();
+        $serviceOrderDAO->populate("tags");
+        $serviceOrderDAO->populate("tags2");
+
+        $this->assertEquals("Tag 3,Tag 2,Tag 5",implode(",",array_map(function($el){ return $el->name; },$items[0]->tags)));
+        $this->assertEquals("Tag 3,Tag 2",implode(",",array_map(function($el){ return $el->name; },$items[0]->tags2)));
+
+    }
 
 
 
