@@ -482,7 +482,7 @@ class DAOTest extends TestCase
 
         $customerDAO->readAll();
         $items = $customerDAO->getItems();
-        $customerDAO->populate("serviceOrders");
+        $customerDAO->populate("serviceOrders",["order"=>["+id"]]);
 
         $this->assertEquals($items[0]->serviceOrders[0]->description,"Demo service order");
         $this->assertEquals($items[0]->serviceOrders[1]->description,"Demo service order 2");
@@ -540,35 +540,35 @@ class DAOTest extends TestCase
             $customerDAO->create($customer);
         }
 
-        $customerDAO->read(["pagination"=>[]]);
+        $customerDAO->read(["pagination"=>[],"order"=>["+id"]]);
         $items = $customerDAO->getItems();
 
         $this->assertCount( 10,$items);
         $ids = array_map(function($el){return $el->id;},$items);
         $this->assertEquals($ids,range(1,10));
 
-        $customerDAO->read(["pagination"=>["page"=>$customerDAO->getPaginationData()["next"]]]);
+        $customerDAO->read(["pagination"=>["page"=>$customerDAO->getPaginationData()["next"]],"order"=>["+id"]]);
         $items = $customerDAO->getItems();
         $this->assertCount( 10,$items);
         $ids = array_map(function($el){return $el->id;},$items);
         $this->assertEquals($ids,range(11,20));
 
 
-        $customerDAO->read(["pagination"=>["page"=>$customerDAO->getPaginationData()["next"]]]);
+        $customerDAO->read(["pagination"=>["page"=>$customerDAO->getPaginationData()["next"]],"order"=>["+id"]]);
         $items = $customerDAO->getItems();
         $this->assertCount( 10,$items);
         $ids = array_map(function($el){return $el->id;},$items);
         $this->assertEquals($ids,range(21,30));
 
 
-        $customerDAO->read(["pagination"=>["page"=>$customerDAO->getPaginationData()["next"]]]);
+        $customerDAO->read(["pagination"=>["page"=>$customerDAO->getPaginationData()["next"]],"order"=>["+id"]]);
         $items = $customerDAO->getItems();
         $this->assertCount( 10,$items);
         $ids = array_map(function($el){return $el->id;},$items);
         $this->assertEquals($ids,range(31,40));
 
 
-        $customerDAO->read(["pagination"=>["page"=>$customerDAO->getPaginationData()["next"]]]);
+        $customerDAO->read(["pagination"=>["page"=>$customerDAO->getPaginationData()["next"]],"order"=>["+id"]]);
         $items = $customerDAO->getItems();
         $this->assertCount( 3,$items);
         $ids = array_map(function($el){return $el->id;},$items);
@@ -638,16 +638,16 @@ class DAOTest extends TestCase
      */
     public function testSaveRelationships($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO)
     {
-         $serviceOrder = new \tests\service_order\ServiceOrder();
-         $serviceOrder->description = "El cliente es agresivo";
+        $serviceOrder = new \tests\service_order\ServiceOrder();
+        $serviceOrder->description = "El cliente es agresivo";
 
-         $tag = new \tests\tag\Tag();
-         $tag->name = "DigitalWash";
-         $serviceOrder->tags[] = $tag;
+        $tag = new \tests\tag\Tag();
+        $tag->name = "DigitalWash";
+        $serviceOrder->tags[] = $tag;
 
-         $tag = new \tests\tag\Tag();
-         $tag->name = "Carga Superior";
-         $serviceOrder->tags[] = $tag;
+        $tag = new \tests\tag\Tag();
+        $tag->name = "Carga Superior";
+        $serviceOrder->tags[] = $tag;
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Buen Estado";
@@ -655,54 +655,69 @@ class DAOTest extends TestCase
         $serviceOrderDAO->create($serviceOrder);
 
         $tags = $tagDAO->readAll();
-        $this->assertEquals($tags[0]->name,"DigitalWash");
-        $this->assertEquals($tags[1]->name,"Carga Superior");
-        $this->assertEquals($tags[2]->name,"Buen Estado");
-        $this->assertCount( 3,$tags);
+        $this->assertEquals($tags[0]->name, "DigitalWash");
+        $this->assertEquals($tags[1]->name, "Carga Superior");
+        $this->assertEquals($tags[2]->name, "Buen Estado");
+        $this->assertCount(3, $tags);
 
-        $this->assertCount( 3,$serviceOrder->tags);
-        $this->assertEquals($serviceOrder->tags[0]->id,1);
-        $this->assertEquals($serviceOrder->tags[1]->id,2);
-        $this->assertEquals($serviceOrder->tags[2]->id,3);
+        $this->assertCount(3, $serviceOrder->tags);
+        $this->assertEquals($serviceOrder->tags[0]->id, 1);
+        $this->assertEquals($serviceOrder->tags[1]->id, 2);
+        $this->assertEquals($serviceOrder->tags[2]->id, 3);
 
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Blanco";
-        $serviceOrder->tags[]=$tag;
+        $serviceOrder->tags[] = $tag;
         $serviceOrderDAO->update($serviceOrder);
 
-        $this->assertCount( 4,$serviceOrder->tags);
-        $this->assertEquals($serviceOrder->tags[0]->id,1);
-        $this->assertEquals($serviceOrder->tags[1]->id,2);
-        $this->assertEquals($serviceOrder->tags[2]->id,3);
-        $this->assertEquals($serviceOrder->tags[3]->id,4);
+        $this->assertCount(4, $serviceOrder->tags);
+        $this->assertEquals($serviceOrder->tags[0]->id, 1);
+        $this->assertEquals($serviceOrder->tags[1]->id, 2);
+        $this->assertEquals($serviceOrder->tags[2]->id, 3);
+        $this->assertEquals($serviceOrder->tags[3]->id, 4);
 
+
+        //Corroboro que se hayan guardado los enlaces a las relaciones
+
+        $serviceOrderTagLinks = $serviceOrderTagDAO->read(["order" => "+id"]);
+        $this->assertCount(4, $serviceOrderTagLinks);
+        $this->assertEquals($serviceOrderTagLinks[0]->tag, 1);
+        $this->assertEquals($serviceOrderTagLinks[0]->service_order, 1);
+        $this->assertEquals($serviceOrderTagLinks[1]->tag, 2);
+        $this->assertEquals($serviceOrderTagLinks[1]->service_order, 1);
+        $this->assertEquals($serviceOrderTagLinks[2]->tag, 3);
+        $this->assertEquals($serviceOrderTagLinks[2]->service_order, 1);
+        $this->assertEquals($serviceOrderTagLinks[3]->tag, 4);
+        $this->assertEquals($serviceOrderTagLinks[3]->service_order, 1);
+        //
 
         $customer = new \tests\customer\Customer();
-        $customer->email ="gabrielmacus@gmail.com";
-        $customer->name ="Gabriel";
+        $customer->email = "gabrielmacus@gmail.com";
+        $customer->name = "Gabriel";
         $customer->age = 18;
-        $customer->surname="Macus";
-        $customer->zip_code=3200;
+        $customer->surname = "Macus";
+        $customer->zip_code = 3200;
 
         $serviceOrder = new \tests\service_order\ServiceOrder();
-        $serviceOrder->description= "PARA EL CLIENTE";
+        $serviceOrder->description = "PARA EL CLIENTE";
         $customer->serviceOrders[] = $serviceOrder;
 
         $serviceOrder = new \tests\service_order\ServiceOrder();
-        $serviceOrder->description= "PARA EL CLIENTE 2";
+        $serviceOrder->description = "PARA EL CLIENTE 2";
         $customer->serviceOrders[] = $serviceOrder;
 
         $serviceOrder = new \tests\service_order\ServiceOrder();
-        $serviceOrder->description= "PARA EL CLIENTE 3";
+        $serviceOrder->description = "PARA EL CLIENTE 3";
         $customer->serviceOrders[] = $serviceOrder;
 
         $customerDAO->create($customer);
+
+
         $this->assertCount( 3,$customer->serviceOrders);
         $this->assertEquals($customer->serviceOrders[0]->id,2);
         $this->assertEquals($customer->serviceOrders[1]->id,3);
         $this->assertEquals($customer->serviceOrders[2]->id,4);
-
 
         $customer = new \tests\customer\Customer();
         $customer->email ="rorocha@gmail.com";
@@ -720,6 +735,32 @@ class DAOTest extends TestCase
         $this->assertEquals($customer->id,2);
         $this->assertEquals($serviceOrder->customer->id,2);
         $this->assertEquals($serviceOrder->tags[0]->id,4);
+
+
+        //Corroboro que se haya seteado el campo externo//
+        $serviceOrders =$serviceOrderDAO->read(["where"=>[["operator"=>"OR","group"=>[["prop"=>"description","value"=>"DEMO ID 5"],["prop"=>"description","value"=>"%PARA EL CLIENTE%","operator"=>"LIKE"]]]],"order"=>["+id"]]);
+
+
+        foreach ($serviceOrders as $s)
+        {
+            /**
+             * @var $s \tests\service_order\ServiceOrder
+             */
+            switch ($s->description)
+            {
+                case 'DEMO ID 5':
+                    $this->assertEquals(2,$s->customer);
+                    break;
+
+                default:
+                    $this->assertEquals(1,$s->customer);
+                    break;
+            }
+
+        }
+        //
+
+
 
 
     }
@@ -768,6 +809,29 @@ class DAOTest extends TestCase
         $this->assertEquals(2,$customer->serviceOrders[0]->tags[1]->id);
         $this->assertEquals(2,$customer->serviceOrders[0]->tags[1]->serviceOrders[0]->id);
         $this->assertEquals(3,$customer->serviceOrders[0]->tags[2]->id);
+
+        //Corroboro que se hayan guardado los enlaces a las relaciones y seteado los campos correspondientes
+
+        $serviceOrderTagLinks = $serviceOrderTagDAO->read(["order" => "+id"]);
+        $this->assertCount(4, $serviceOrderTagLinks);
+
+
+        $this->assertEquals($serviceOrderTagLinks[0]->tag, 1);
+        $this->assertEquals($serviceOrderTagLinks[0]->service_order, 1);
+        $this->assertEquals($serviceOrderTagLinks[1]->tag, 2);
+        $this->assertEquals($serviceOrderTagLinks[1]->service_order, 2);
+        $this->assertEquals($serviceOrderTagLinks[2]->tag, 2);
+        $this->assertEquals($serviceOrderTagLinks[2]->service_order, 1);
+        $this->assertEquals($serviceOrderTagLinks[3]->tag, 3);
+        $this->assertEquals($serviceOrderTagLinks[3]->service_order, 1);
+
+
+        $serviceOrders = $serviceOrderDAO->readAll();
+        $this->assertCount(2, $serviceOrders);
+        $this->assertEquals(1,$serviceOrders[0]->customer);
+        $this->assertEquals(null,$serviceOrders[1]->customer);
+        //
+
     }
 
 
@@ -869,7 +933,7 @@ class DAOTest extends TestCase
         $serviceOrderDAO->update($serviceOrder);
 
         $items = $serviceOrderDAO->readAll();
-        $serviceOrderDAO->populate("tags");
+        $serviceOrderDAO->populate("tags",["order"=>["+id"]]);
 
 
         $this->assertEquals(1,$items[0]->tags[0]->id);
@@ -908,8 +972,8 @@ class DAOTest extends TestCase
 
         $serviceOrderDAO->update($serviceOrder);
 
-        $items = $serviceOrderDAO->readAll();
-        $serviceOrderDAO->populate("tags");
+        $items = $serviceOrderDAO->read(["order"=>["+id"]]);
+        $serviceOrderDAO->populate("tags",["order"=>["+id"]]);
 
 
         $this->assertEquals(4,$items[0]->tags[0]->id);
@@ -988,9 +1052,9 @@ class DAOTest extends TestCase
 
         $serviceOrderDAO->update($serviceOrder);
 
-        $serviceOrderDAO->readAll();
+        $serviceOrderDAO->read(["order"=>["+id"]]);
         $items = $serviceOrderDAO->getItems();
-        $serviceOrderDAO->populate("tags");
+        $serviceOrderDAO->populate("tags",["order"=>["+id"]]);
         $this->assertCount(2, $items[0]->tags);
         $this->assertEquals(3, $items[0]->tags[0]->id);
         $this->assertEquals(4, $items[0]->tags[1]->id);
@@ -1028,7 +1092,193 @@ class DAOTest extends TestCase
 
     }
 
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testPopulateFromChild($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
 
+        $serviceOrder1 = new \tests\service_order\ServiceOrder();
+        $serviceOrder1->description = 'Service Order #1';
+        $serviceOrderDAO->create($serviceOrder1);
+
+        $serviceOrder2 = new \tests\service_order\ServiceOrder();
+        $serviceOrder2->description = 'Service Order #2';
+        $serviceOrderDAO->create($serviceOrder2);
+
+        $serviceOrder3 = new \tests\service_order\ServiceOrder();
+        $serviceOrder3->description = 'Service Order #3';
+        $serviceOrderDAO->create($serviceOrder3);
+
+        $serviceOrder4 = new \tests\service_order\ServiceOrder();
+        $serviceOrder4->description = 'Service Order #4';
+        $serviceOrderDAO->create($serviceOrder4);
+
+        $serviceOrder5 = new \tests\service_order\ServiceOrder();
+        $serviceOrder5->description = 'Service Order #5';
+        $serviceOrderDAO->create($serviceOrder5);
+
+        $serviceOrder6 = new \tests\service_order\ServiceOrder();
+        $serviceOrder6->description = 'Service Order #6';
+        $serviceOrderDAO->create($serviceOrder6);
+
+
+
+        $tag1 = new \tests\tag\Tag();
+        $tag1->name= "Tag #1";
+        $tag1->serviceOrders[]  = $serviceOrder6;
+        $tag1->serviceOrders[]  = $serviceOrder5;
+        $tagDAO->create($tag1);
+
+
+        $tag2 = new \tests\tag\Tag();
+        $tag2->name= "Tag #2";
+        $tagDAO->create($tag2);
+
+        $tag3 = new \tests\tag\Tag();
+        $tag3->name= "Tag #3";
+        $tag3->serviceOrders[] = $serviceOrder3;
+        $tag3->serviceOrders[] = $serviceOrder1;
+        $tagDAO->create($tag3);
+
+        $tag4 = new \tests\tag\Tag();
+        $tag4->serviceOrders[] = $serviceOrder4;
+        $tag4->serviceOrders[] = $serviceOrder2;
+        $tag4->name= "Tag #4";
+        $tagDAO->create($tag4);
+
+
+
+        $image1= new \tests\image\Image();
+        $image1->name = 'cat.jpg';
+        $image1->size = 10000;
+        $image1->extension = 'jpg';
+        $image1->tags[] = clone $tag1;
+        $image1->tags[] = clone $tag4;
+        $imageDAO->create($image1);
+
+        $image2= new \tests\image\Image();
+        $image2->name = 'dog.jpg';
+        $image2->size = 10000;
+        $image2->extension = 'jpg';
+        $image2->tags[] = clone $tag2;
+        $image2->tags[] = clone $tag3;
+        $imageDAO->create($image2);
+
+
+        $image3= new \tests\image\Image();
+        $image3->name = 'bird.jpg';
+        $image3->size = 10000;
+        $image3->tags[] = clone $tag2;
+        $image3->extension = 'jpg';
+        $imageDAO->create($image3);
+
+        $imageDAO->readAll();
+        $imageDAO->populate("tags")->populate("serviceOrders");
+        $items = $imageDAO->getItems();
+
+
+        $checkTagsServiceOrders = function ($tags)
+        {
+         foreach ($tags as $tag)
+         {
+             switch ($tag->id)
+             {
+                 case 1:
+
+                     $serviceOrders = array_map(function($el){return $el->id;},$tag->serviceOrders);
+                     $this->assertCount(2,$serviceOrders);
+                     $this->assertContains(6,$serviceOrders);
+                     $this->assertContains(5,$serviceOrders);
+
+                     break;
+
+                 case 2:
+
+                     $serviceOrders = array_map(function($el){return $el->id;},$tag->serviceOrders);
+                     $this->assertCount(0,$serviceOrders);
+
+                     break;
+                 case 3:
+
+                     $serviceOrders = array_map(function($el){return $el->id;},$tag->serviceOrders);
+                     $this->assertCount(2,$serviceOrders);
+                     $this->assertContains(3,$serviceOrders);
+                     $this->assertContains(1,$serviceOrders);
+
+
+                     break;
+                 case 4:
+                     $serviceOrders = array_map(function($el){return $el->id;},$tag->serviceOrders);
+                     $this->assertCount(2,$serviceOrders);
+                     $this->assertContains(4,$serviceOrders);
+                     $this->assertContains(2,$serviceOrders);
+
+                     break;
+             }
+         }
+        };
+        $checkTagsServiceOrders = $checkTagsServiceOrders->bindTo($this);
+
+
+
+
+        foreach ($items as $item){
+            switch ($item->id)
+            {
+                case 1:
+
+
+                    $tags = array_map(function($el){return $el->id;},$item->tags);
+
+                    $this->assertCount(2,$tags);
+                    $this->assertContains(1,$tags);
+                    $this->assertContains(4,$tags);
+
+                    $checkTagsServiceOrders($item->tags);
+
+                    break;
+
+                case 2:
+
+
+                    $tags = array_map(function($el){return $el->id;},$item->tags);
+                    $this->assertCount(2,$tags);
+                    $this->assertContains(2,$tags);
+                    $this->assertContains(3,$tags);
+
+                    $checkTagsServiceOrders($item->tags);
+
+
+                    break;
+                case 3:
+
+                    $tags = array_map(function($el){return $el->id;},$item->tags);
+
+                    $this->assertCount(1,$tags);
+                    $this->assertContains(2,$tags);
+
+                    $checkTagsServiceOrders($item->tags);
+
+                    break;
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+    }
 
     /**
      * @dataProvider daoProvider
@@ -1233,7 +1483,7 @@ class DAOTest extends TestCase
         $items = $serviceOrderDAO->readAll();
 
 
-        $serviceOrderDAO->populate("tags")->populate("images");
+        $serviceOrderDAO->populate("tags",["order"=>["+id"]])->populate("images",["order"=>["+id"]]);
 
         $this->assertEquals($items[0]->tags[0]->id,6);
         $this->assertCount(2,$items[0]->tags[0]->images);
@@ -1280,10 +1530,10 @@ class DAOTest extends TestCase
         $this->assertCount(2,$items[2]->tags);
 
 
+
     }
 
-
-    /**
+  /**
      * @dataProvider daoProvider
      * @param $customerDAO \tests\customer\CustomerDAO
      * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
@@ -1305,8 +1555,6 @@ class DAOTest extends TestCase
         $this->assertEquals($customer->name,"Changed on After Create");
         $this->assertEquals($customer->zip_code,3999);
     }
-
-
 
     /**
      * @dataProvider daoProvider
@@ -1522,35 +1770,311 @@ class DAOTest extends TestCase
     public function testRelateSameTypeObjectsTwoDifferentProperties($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO)
     {
 
+        $serviceOrder2 = new \tests\service_order\ServiceOrder();
+        $serviceOrder2->description = 'Demo 456';
+
         $serviceOrder = new \tests\service_order\ServiceOrder();
         $serviceOrder->description = 'Demo 123';
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 3";
-        $serviceOrder->tags[] =$tag;
-        $serviceOrder->tags2[]=$tag;
+        $tagDAO->create($tag);
+        $serviceOrder->tags[] =clone $tag;
+        $serviceOrder2->tags[] =clone $tag;
+        $serviceOrder->tags2[]=clone $tag;
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 2";
-        $serviceOrder->tags[]=$tag;
-        $serviceOrder->tags2[]=$tag;
+        $tagDAO->create($tag);
+        $serviceOrder->tags[]=clone $tag;
+        $serviceOrder->tags2[]=clone $tag;
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 5";
-        $serviceOrder->tags[] = $tag;
+        $tagDAO->create($tag);
+        $serviceOrder->tags[] = clone $tag;
+        $serviceOrder2->tags2[] = clone $tag;
+
 
         $serviceOrderDAO->create($serviceOrder);
-        $serviceOrderDAO->readAll();
+        $serviceOrderDAO->create($serviceOrder2);
+
+
+        $serviceOrderDAO->read(["where"=>[["prop"=>"id","value"=>"1"]],"order"=>["+id"]]);
+        $items = $serviceOrderDAO->getItems();
+        $serviceOrderDAO->populate("tags",["order"=>["+id"]]);
+        $serviceOrderDAO->populate("tags2",["order"=>["+id"]]);
+
+        $this->assertEquals("Tag 3,Tag 2,Tag 5",implode(",",array_map(function($el){ return $el->name; },$items[0]->tags)));
+        $this->assertEquals("1,2,3",implode(",",array_map(function($el){ return $el->id; },$items[0]->tags)));
+        $this->assertEquals("Tag 3,Tag 2",implode(",",array_map(function($el){ return $el->name; },$items[0]->tags2)));
+        $this->assertEquals("1,2",implode(",",array_map(function($el){ return $el->id; },$items[0]->tags2)));
+
+
+        $serviceOrderDAO->read(["where"=>[["prop"=>"id","value"=>"2"]]]);
         $items = $serviceOrderDAO->getItems();
         $serviceOrderDAO->populate("tags");
         $serviceOrderDAO->populate("tags2");
 
-        $this->assertEquals("Tag 3,Tag 2,Tag 5",implode(",",array_map(function($el){ return $el->name; },$items[0]->tags)));
-        $this->assertEquals("Tag 3,Tag 2",implode(",",array_map(function($el){ return $el->name; },$items[0]->tags2)));
+
+        $this->assertEquals("Tag 3",implode(",",array_map(function($el){ return $el->name; },$items[0]->tags)));
+        $this->assertEquals("1",implode(",",array_map(function($el){ return $el->id; },$items[0]->tags)));
+        $this->assertEquals("Tag 5",implode(",",array_map(function($el){ return $el->name; },$items[0]->tags2)));
+        $this->assertEquals("3",implode(",",array_map(function($el){ return $el->id; },$items[0]->tags2)));
+
+
+        $tagDAO->read(["order"=>["+id"]]);
+        $tagDAO->populate("serviceOrders",["order"=>["+id"]]);
+        $items = $tagDAO->getItems();
+
+        foreach ($items as $item)
+        {
+            switch ($item->id)
+            {
+                case 1:
+                    $this->assertEquals("Demo 123,Demo 456",implode(",",array_map(function($el){ return $el->description; },$item->serviceOrders)));
+                    break;
+                case 2:
+                    $this->assertEquals("Demo 123",implode(",",array_map(function($el){ return $el->description; },$item->serviceOrders)));
+                    break;
+                case 3:
+                    $this->assertEquals("Demo 123",implode(",",array_map(function($el){ return $el->description; },$item->serviceOrders)));
+                    break;
+            }
+        }
+
+
+    }
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     */
+    public function testOrder($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO)
+    {
+
+        $customer = new \tests\customer\Customer();
+        $customer->name = "Alberto";
+        $customer->surname ="Zapata";
+        $customer->zip_code = 2000;
+        $customer->age = 99;
+        $customer->email = "a@a.com";
+        $customerDAO->create($customer);
+
+        $customer = new \tests\customer\Customer();
+        $customer->name = "Yolanda";
+        $customer->surname ="Mota";
+        $customer->zip_code = 500;
+        $customer->age = 70;
+        $customer->email = "a@a.com";
+        $customerDAO->create($customer);
+
+        $customer = new \tests\customer\Customer();
+        $customer->name = "Ramon";
+        $customer->surname ="Valdez";
+        $customer->zip_code = 1000;
+        $customer->age = 88;
+        $customer->email = "a@a.com";
+        $customerDAO->create($customer);
+
+
+        $customer = new \tests\customer\Customer();
+        $customer->name = "Ramon";
+        $customer->surname ="Abila";
+        $customer->zip_code = 1000;
+        $customer->age = 88;
+        $customer->email = "a@a.com";
+        $customerDAO->create($customer);
+
+        $customerDAO->read(["order"=>["id"]]);
+        $items = $customerDAO->getItems();
+
+        $ids = array_map(function($el){ return intval($el->id); },$items);
+        $this->assertEquals([4,3,2,1],$ids);
+
+
+        $customerDAO->read(["order"=>["+name","surname"]]);
+        $items = $customerDAO->getItems();
+        $ids = array_map(function($el){ return $el->id; },$items);
+        $this->assertEquals([1,3,4,2],$ids);
+
+
+        $customerDAO->read(["order"=>["surname"]]);
+        $items = $customerDAO->getItems();
+        $ids = array_map(function($el){ return $el->id; },$items);
+        $this->assertEquals([1,3,2,4],$ids);
+
+
+
 
     }
 
 
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testQueryPopulate($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+
+
+        $customer1 = new \tests\customer\Customer();
+        $customer1->name ="Name";
+        $customer1->surname = "Surname";
+        $customer1->email = "email@email.com";
+        $customer1->zip_code = 3000;
+        $customer1->age = 20;
+        $customerDAO->create($customer1);
+
+        $serviceOrder1 = new \tests\service_order\ServiceOrder();
+        $serviceOrder1->description = 'Service order #1';
+        $serviceOrder1->customer = $customer1;
+        $serviceOrderDAO->create($serviceOrder1);
+
+        $serviceOrder2 = new \tests\service_order\ServiceOrder();
+        $serviceOrder2->description = 'Service order #2';
+        $serviceOrder2->customer = $customer1;
+        $serviceOrderDAO->create($serviceOrder2);
+
+        $serviceOrder3 = new \tests\service_order\ServiceOrder();
+        $serviceOrder3->description = 'Service order #3';
+        $serviceOrder3->customer = $customer1;
+        $serviceOrderDAO->create($serviceOrder3);
+
+        $item = $customerDAO->readById(1);
+        $customerDAO->populate("serviceOrders",["where"=>[["prop"=>"description","value"=>"%order%","operator"=>"LIKE"],["prop"=>"id","value"=>"2"]]]);
+
+
+        $this->assertCount(1,$item->serviceOrders);
+        $this->assertEquals($item->serviceOrders[0]->id,2);
+        $this->assertEquals($item->serviceOrders[0]->description,'Service order #2');
+
+        $item = $customerDAO->readById(1);
+        $customerDAO->populate("serviceOrders");
+
+        $this->assertCount(3,$item->serviceOrders);
+
+
+        $tag1 = new \tests\tag\Tag();
+        $tag1->name ="Tag #1";
+        $tagDAO->create($tag1);
+
+        $tag2 = new \tests\tag\Tag();
+        $tag2->name ="Tag #2";
+        $tagDAO->create($tag2);
+
+        $tag3 = new \tests\tag\Tag();
+        $tag3->name ="Tag #3";
+        $tagDAO->create($tag3);
+
+        $image = new \tests\image\Image();
+        $image->name = '9.svg';
+        $image->size = 12313;
+        $image->extension = 'svg';
+        $image->tags[] =$tag1;
+        $image->tags[] =$tag2;
+        $image->tags[] =$tag3;
+        $imageDAO->create($image);
+
+        $item = $imageDAO->readById(1);
+        $imageDAO->populate("tags",["order"=>["+id"],"where"=>[["prop"=>"id","value"=>1,"operator"=>">"]]]);
+
+        $this->assertCount(2,$item->tags);
+        $this->assertEquals($item->tags[0]->id,2);
+        $this->assertEquals($item->tags[0]->name,'Tag #2');
+        $this->assertEquals($item->tags[1]->id,3);
+        $this->assertEquals($item->tags[1]->name,'Tag #3');
+
+        $item = $imageDAO->readById(1);
+        $imageDAO->populate("tags");
+        $this->assertCount(3,$item->tags);
+
+
+    }
+
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testPaginationPopulate($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+
+        $customer1 = new \tests\customer\Customer();
+        $customer1->name ="Name";
+        $customer1->surname = "Surname";
+        $customer1->email = "email@email.com";
+        $customer1->zip_code = 3000;
+        $customer1->age = 20;
+
+        for($i=0;$i<60;$i++)
+        {
+            $serviceOrder1 = new \tests\service_order\ServiceOrder();
+            $serviceOrder1->description= "Description #".($i + 1);
+            $customer1->serviceOrders[] = $serviceOrder1;
+        }
+        $customerDAO->create($customer1);
+
+        foreach (range(1,3) as $page)
+        {
+            $items = $customerDAO->readAll();
+            $customerDAO->populate("serviceOrders",["order"=>["+id"],"pagination"=>["page"=>$page]]);
+            $this->assertCount(20,$items[0]->serviceOrders);
+            for ($i=0;$i<20;$i++)
+            {
+
+                $this->assertEquals("Description #".( ($i + 1) + (($page - 1) * 20)),$items[0]->serviceOrders[$i]->description);
+
+            }
+        }
+
+        $image = new \tests\image\Image();
+        $image->name = '9.svg';
+        $image->size = 12313;
+        $image->extension = 'svg';
+
+        for ($i=1;$i<=6;$i++)
+        {
+            $tag = new \tests\tag\Tag();
+            $tag->name = "Tag #{$i}";
+            $image->tags[] = $tag;
+        }
+
+        $imageDAO->create($image);
+       foreach (range(1,3) as $page)
+        {
+            $items = $imageDAO->readAll();
+            $imageDAO->populate("tags",["order"=>["+id"],"pagination"=>["page"=>$page]]);
+
+
+            $this->assertCount(2,$items[0]->tags);
+
+            for ($i=0;$i<2;$i++)
+            {
+
+
+                $this->assertEquals("Tag #".( ($i + 1) + (($page - 1) * 2)),$items[0]->tags[$i]->name);
+
+            }
+        }
+
+ ;
+
+    }
+
+
+    //TODO: al paginar un populate,  al parametro pagination usarlo en la tabla link (EN caso de q sea muchos a muchos) para que pagine correctamente los resultados
 
 
     public function daoProvider()

@@ -112,9 +112,10 @@ interface ICoreDAO
     /**
      * Puebla el campo del modelo de acuerdo a la relación correspondiente (Uno a muchos,muchos a uno, muchos a muchos...)
      * @param string $property
+     * @param array $params Array con parametros de busqueda para los elementos a poblar
      * @return mixed
      */
-    public function populate(string $property);
+    public function populate(string $property,array $params);
 
 
     /**
@@ -128,6 +129,14 @@ interface ICoreDAO
      * @return array
      */
     public function getPaginationConfiguration():array;
+
+
+    /**
+     * Datos de ordenamiento de la consulta por defecto
+     * @return array
+     */
+    public function getDefaultOrder():array;
+
 
     /**
      * Procesa los parametros de paginación

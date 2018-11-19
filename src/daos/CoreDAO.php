@@ -114,6 +114,12 @@ abstract class CoreDAO implements ICoreDAO
        ];
     }
 
+    public function getDefaultOrder(): array
+    {
+        return ["-id"];
+    }
+
+
     /**
      * Procesa los parametros de consulta, por ejemplo podrian provenir de la variable
      * $_GET, y devuelve un array ["statement"=>"","input_parameters"=>]
@@ -133,6 +139,26 @@ abstract class CoreDAO implements ICoreDAO
         $where = [];
         $fields = empty($params["fields"]) || !is_array($params["fields"])?
            "*":implode(",",array_map(function($field){return $this->prefix."_".$field;},$params["fields"]));
+
+
+        $order = "";
+        if(!empty($params["order"]) && is_array($params["order"]))
+        {
+
+
+            foreach ($params["order"] as $k => $order)
+            {
+                $direction = "DESC";
+
+                if(strpos(trim($order),"+") === 0)
+                {
+                    $direction ="ASC";
+                }
+                $params["order"][$k] = "{$this->prefix}_".str_replace("-","",str_replace("+","",$params["order"][$k]))." {$direction}";
+            }
+
+            $order = " ORDER BY ".implode(",",$params["order"]);
+        }
 
 
        if(!empty($params["where"]) && is_array($params["where"]))
@@ -166,6 +192,8 @@ abstract class CoreDAO implements ICoreDAO
            }
        }
 
+
+
        $pagination = "";
        if(!empty($params["pagination"]) && is_array($params["pagination"]))
        {
@@ -175,7 +203,8 @@ abstract class CoreDAO implements ICoreDAO
            $this->paginationData = $params["pagination"];
        }
 
-       $statement ="SELECT {$fields} FROM {$this->resource} ".(!empty($where)?"WHERE ".implode(" AND ",$where):"").$pagination;
+       $statement ="SELECT {$fields} FROM {$this->resource} ".(!empty($where)?"WHERE ".implode(" AND ",$where):"").$order.$pagination;
+
 
 
         return ["statement"=>$statement,"input_parameters"=>$input_parameters];
@@ -300,6 +329,12 @@ abstract class CoreDAO implements ICoreDAO
        $params["where"][] = ["prop"=>"deleted_at","value"=>NULL,"operator"=>"IS"];
        $this->processPagination($params);
        $this->beforeRead($params);
+
+       if(empty($params["order"]))
+       {
+           $params["order"] = $this->getDefaultOrder();
+       }
+
        $this->execute($this->processQuery($params));
        $items =  $this->getItems();
        $this->afterRead($items);
@@ -593,7 +628,7 @@ abstract class CoreDAO implements ICoreDAO
 
     }
 
-    public function &populate(string $property)
+    public function &populate(string $property,array $params = [])
     {
         $localPopData = $this->processPopulateAnnotations($property);
         /**
@@ -604,6 +639,7 @@ abstract class CoreDAO implements ICoreDAO
         $in = [];
         $items = $this->getItems();
         $map = [];
+
 
         if(isset($localPopData["link_dao"]))
         {
@@ -628,10 +664,31 @@ abstract class CoreDAO implements ICoreDAO
             if(count($in) > 0)
             {
 
-                $query= ["where"=>[["prop"=>$this->getResourceName(),"value"=>$in,"operator"=>"IN"], ["prop"=>"property","value"=>$property,"operator"=>"="]]];
+                //Si esta seteado el comentario parent_property, significa que el elemento al otro extremo es el dominante
+                $query_property = !empty($localPopData["parent_property"])?$localPopData["parent_property"]:$property;
+
+
+                $query= ["where"=>[["prop"=>$this->getResourceName(),"value"=>$in,"operator"=>"IN"], ["prop"=>"property","value"=>$query_property,"operator"=>"="]]];
+
+                if(!empty($params["pagination"])){
+                    $ExternalDAO->processPagination($params);
+                    $query["pagination"] = $params["pagination"];
+                    unset($params["pagination"]);
+
+                    //Si ordeno por id, ordeno tambien por la propiedad con el id del elemento asociado en el link
+                   foreach ($params["order"] as $k => $v)
+                   {
+                       if(strpos($v,"id")!== false)
+                       {
+                           $query["order"][] = str_replace("id", $ExternalDAO->getResourceName(),$v);
+                          // unset($params["order"][$k]);
+                       }
+                   }
+                   //
+                }
+
 
                 $linkItems  = $LinkDAO->read($query);
-
 
                 $linkMap = [];
                 $in = [];
@@ -646,7 +703,9 @@ abstract class CoreDAO implements ICoreDAO
 
                 if(count($in) > 0 )
                 {
-                    $query= ["where"=>[["prop"=>"id","value"=>$in,"operator"=>"IN"]]];
+                    //$query= ["where"=>[["prop"=>"id","value"=>$in,"operator"=>"IN"]]];
+                    $query=array_merge_recursive($params,["where"=>[["prop"=>"id","value"=>$in,"operator"=>"IN"]]]);
+
                     $itemsToPopulateWith = $ExternalDAO->read($query);
 
                     foreach ($itemsToPopulateWith as $item)
@@ -685,7 +744,8 @@ abstract class CoreDAO implements ICoreDAO
 
             if(count($in) > 0)
             {
-                $query= ["where"=>[["prop"=>$external_field,"value"=>$in,"operator"=>"IN"]]];
+               // $query= ["where"=>[["prop"=>$external_field,"value"=>$in,"operator"=>"IN"]]];
+                $query=array_merge_recursive($params,["where"=>[["prop"=>$external_field,"value"=>$in,"operator"=>"IN"]]]);
 
                 $itemsToPopulateWith  = $ExternalDAO->read($query);
 
@@ -711,7 +771,9 @@ abstract class CoreDAO implements ICoreDAO
 
             if(count($in) > 0)
             {
-                $query= ["where"=>[["prop"=>"id","value"=>$in,"operator"=>"IN"]]];
+                //$query= ["where"=>[["prop"=>"id","value"=>$in,"operator"=>"IN"]]];
+                $query=array_merge_recursive($params,["where"=>[["prop"=>"id","value"=>$in,"operator"=>"IN"]]]);
+
 
                 $itemsToPopulateWith  = $ExternalDAO->read($query);
 
@@ -913,7 +975,8 @@ abstract class CoreDAO implements ICoreDAO
                              $localResource =  $this->getResourceName();
                              $Link->$externalResource = $this->processItemToRelate($v,$ExternalDAO);
                              $Link->$localResource = $model->id;
-                             $Link->property = $key;
+                             //
+                             $Link->property = empty($annotations["parent_property"])?$key:$annotations["parent_property"];
 
                              if(empty($Link->id))
                              {
@@ -923,6 +986,12 @@ abstract class CoreDAO implements ICoreDAO
 
                                  $LinkDAO->update($Link);
                              }
+
+                             $v->relation_data_id = $Link->id;
+                             $rd = $v->getRelationshipsData();
+                             $rd[$key][$v->id] = $Link;
+                             $v->setRelationshipsData($rd);
+
                              $savedRelationships[$key][] = $v;
                          }
 
@@ -936,12 +1005,14 @@ abstract class CoreDAO implements ICoreDAO
                  {
                      $value = !is_array($value)? [$value]:$value;
                      $externalField = $annotations["external_field"];
+
                      foreach ($value as $k=>$v)
                      {
+
                          $id = $this->processItemToRelate($v,$ExternalDAO);
                          $externalModel = $ExternalDAO->getModel();
                          $externalModel->id = $id;
-                         $externalModel->$externalField = $externalModel->id;
+                         $externalModel->$externalField = $model->id;
                          $ExternalDAO->update($externalModel);
                          $savedRelationships[$key][] = $v;
                      }
@@ -949,6 +1020,7 @@ abstract class CoreDAO implements ICoreDAO
                  }
                  else
                  {
+
                      $id = $this->processItemToRelate($value,$ExternalDAO);
                      $this->execute(["statement"=>"UPDATE ".$this->getResourceName()." SET ".$this->prefix."_{$key} = {$id} WHERE ".$this->prefix."_id = ".$model->id,"input_parameters"=>[]]);
                      $savedRelationships[$key] = $value;
@@ -961,11 +1033,11 @@ abstract class CoreDAO implements ICoreDAO
          }
 
          //Elimino las relaciones que esten marcadas para eliminacion (muchos a muchos)
-         /*$rd =  $model->getRelationshipsData();
+        /*$rd =  $model->getRelationshipsData();
 
          foreach ($rd as $k=>$v)
          {
-             $relationshipsToDelete= [];
+
 
              foreach ($v as $i => $j)
              {

@@ -19,9 +19,10 @@ class Tag extends CoreModel
     public $name;
     /**
      * @dao tests\service_order\ServiceOrderDAO
+     * @parent_property tags
      * @link_dao tests\service_order_tag\ServiceOrderTagDAO
      */
-    public $serviceOrders;
+    public $serviceOrders = [];
 
     /**
      * @dao tests\image\ImageDAO

@@ -14,4 +14,11 @@ namespace tests\image;
  class Image extends Multimedia
 {
     public $type = 'image';
+
+     /**
+      * @dao tests\tag\TagDAO
+      * @parent_property images
+      * @link_dao tests\multimedia_tag\MultimediaTagDAO
+      */
+     public $tags=[];
 }
