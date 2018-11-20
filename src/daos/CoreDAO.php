@@ -15,7 +15,7 @@ use models\CoreModel;
 use models\ICoreModel;
 use models\LinkModel;
 
-
+//TODO: ver la posibilidad de que el ordenamiento con el campo position sea separado en el padre y el hijo
 abstract class CoreDAO implements ICoreDAO
 {
 
@@ -687,13 +687,12 @@ abstract class CoreDAO implements ICoreDAO
                    //
                 }
 
-                if(empty($query["order"]))
+                $orderByPosition = false;
+                if(empty($params["order"]))
                 {
-                    $query["order"] = ["-position"];
-                }
-                else
-                {
-                    $query["order"][] = "-position";
+                    $orderByPosition = true;
+                    //Ordeno por posicion en el array solo si el parametro de ordenamiento esta vacio
+                    $query["order"] = ["+position"];
                 }
 
 
@@ -723,11 +722,29 @@ abstract class CoreDAO implements ICoreDAO
                         {
                             //Seteo el id de la relacion en el objeto relacionado para evitar relaciones duplicadas al actualizar el objeto relacionado a este
                             $item->relation_data_id = $value["link"]->id;
-
+                            //Tambien seteo la posicion de la relacion, con motivos de ordenamiento
+                            $item->relation_data_position = $value["link"]->position;
                             $map[$value["resource"]]->$property[] = $item;
                             $rd = $map[$value["resource"]]->getRelationshipsData();
                             $rd[$property][$item->id] = $value["link"];
                             $map[$value["resource"]]->setRelationshipsData($rd);
+                        }
+                    }
+
+                    //Si los resultados fueron ordenados por posicion, los ordeno de esta manera en el array tambien
+                    if($orderByPosition)
+                    {
+                        foreach ($map as $item)
+                        {
+                            usort($item->$property, function($a,$b){
+
+                                if ($a->relation_data_position == $b->relation_data_position) {
+                                    return 0;
+                                }
+                                return ($a->relation_data_position < $b->relation_data_position) ? -1 : 1;
+
+                            });
+
                         }
                     }
 

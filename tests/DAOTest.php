@@ -2073,8 +2073,98 @@ class DAOTest extends TestCase
 
     }
 
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testLinkOrderPosition($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+        $image = new \tests\image\Image();
+        $image->name = '9.svg';
+        $image->size = 12313;
+        $image->extension = 'svg';
 
-    //TODO: al paginar un populate,  al parametro pagination usarlo en la tabla link (EN caso de q sea muchos a muchos) para que pagine correctamente los resultados
+        $tag = new \tests\tag\Tag();
+        $tag->name = "Tag #1";
+        $image->tags[] = $tag;
+
+        $tag = new \tests\tag\Tag();
+        $tag->name = "Tag #2";
+        $image->tags[] = $tag;
+
+        $tag = new \tests\tag\Tag();
+        $tag->name = "Tag #3";
+        $image->tags[] = $tag;
+
+        $imageDAO->create($image);
+        $items = $imageDAO->read(["order"=>["+id"]]);
+        $imageDAO->populate("tags");
+
+
+
+        $this->assertEquals(0,$items[0]->getRelationshipsData()['tags'][1]->position);
+        $this->assertEquals("Tag #1",$items[0]->tags[0]->name);
+
+        $this->assertEquals(1,$items[0]->getRelationshipsData()['tags'][2]->position);
+        $this->assertEquals("Tag #2",$items[0]->tags[1]->name);
+
+        $this->assertEquals(2,$items[0]->getRelationshipsData()['tags'][3]->position);
+        $this->assertEquals("Tag #3",$items[0]->tags[2]->name);
+
+        $tags = $items[0]->tags;
+        $items[0]->tags[1]=$tags[2];
+        $items[0]->tags[2]=$tags[1];
+
+        $imageDAO->update($items[0]);
+
+        $items = $imageDAO->read(["order"=>["+id"]]);
+        $imageDAO->populate("tags");
+
+
+        $this->assertEquals(0,$items[0]->getRelationshipsData()['tags'][1]->position);
+        $this->assertEquals("Tag #1",$items[0]->tags[0]->name);
+
+        $this->assertEquals(2,$items[0]->getRelationshipsData()['tags'][2]->position);
+        $this->assertEquals("Tag #3",$items[0]->tags[1]->name);
+
+        $this->assertEquals(1,$items[0]->getRelationshipsData()['tags'][3]->position);
+        $this->assertEquals("Tag #2",$items[0]->tags[2]->name);
+
+
+
+
+        $items[0]->tags[0]=$tags[1];
+        $items[0]->tags[1]=$tags[0];
+        $items[0]->tags[2]=$tags[2];
+
+        $imageDAO->update($items[0]);
+
+        $items = $imageDAO->read(["order"=>["+id"]]);
+        $imageDAO->populate("tags");
+
+
+        $this->assertEquals(1,$items[0]->getRelationshipsData()['tags'][1]->position);
+        $this->assertEquals("Tag #1",$items[0]->tags[1]->name);
+
+        $this->assertEquals(0,$items[0]->getRelationshipsData()['tags'][2]->position);
+        $this->assertEquals("Tag #2",$items[0]->tags[0]->name);
+
+        $this->assertEquals(2,$items[0]->getRelationshipsData()['tags'][3]->position);
+        $this->assertEquals("Tag #3",$items[0]->tags[2]->name);
+
+
+
+
+
+
+
+
+
+    }
 
 
     public function daoProvider()
