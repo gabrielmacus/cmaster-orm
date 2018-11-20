@@ -959,8 +959,13 @@ abstract class CoreDAO implements ICoreDAO
 
                          if($toDelete)
                          {
-                           //Chequeo si el objeto no es del tipo correcto
-                           if(!is_a($v,$ExternalDAO->getModel(true)))
+
+                             /**
+                              * Chequeo si el objeto no es del tipo correcto.
+                             si es un objeto, debe corresponder al tipo del
+                             elemento a desasociar, y sino, debe ser un array con los datos correspondientes
+                              */
+                             if(!is_array($v) && !is_a($v,$ExternalDAO->getModel(true)))
                            {
                                throw new DAOException("El elemento de la relación a eliminar no posee el tipo correcto. Se esperaba:".
                                    $ExternalDAO->getModel(true)." y se obtuvo ".get_class($v));
