@@ -18,5 +18,5 @@ class ServiceOrderTag extends LinkModel
 
     public $service_order;
 
-    public $position;
+    public $caption;
 }

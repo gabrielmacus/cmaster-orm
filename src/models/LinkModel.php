@@ -16,4 +16,10 @@ abstract class LinkModel extends CoreModel
      * @var string $property
      */
     public $property;
+
+    /**
+     * La posición del elemento asociado en el array
+     * @var int $position
+     */
+    public $position;
 }

@@ -687,6 +687,15 @@ abstract class CoreDAO implements ICoreDAO
                    //
                 }
 
+                if(empty($query["order"]))
+                {
+                    $query["order"] = ["-position"];
+                }
+                else
+                {
+                    $query["order"][] = "-position";
+                }
+
 
                 $linkItems  = $LinkDAO->read($query);
 
@@ -924,10 +933,9 @@ abstract class CoreDAO implements ICoreDAO
                              throw new DAOException("El objeto link debe ser del tipo ".LinkModel::class);
                          }
 
-
-
                          foreach ($v as $h => $i)
                          {
+
                              if(strpos($h,"relation_data_") === 0)
                              {
                                  /*
@@ -956,6 +964,10 @@ abstract class CoreDAO implements ICoreDAO
 
                              }
                          }
+
+
+                         //Seteo la posicion en el array
+                         $Link->position = $k;
 
                          if($toDelete)
                          {

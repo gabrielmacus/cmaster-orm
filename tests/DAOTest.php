@@ -849,18 +849,18 @@ class DAOTest extends TestCase
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 1";
-        $tag->relation_data_position = 546;
+        $tag->relation_data_caption = 546;
         $serviceOrder->tags[] =$tag;
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 2";
-        $tag->relation_data_position = 529;
+        $tag->relation_data_caption = 529;
         $serviceOrder->tags[] =$tag;
 
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 3";
-        $tag->relation_data_position = 521;
+        $tag->relation_data_caption = 521;
         $serviceOrder->tags[] =$tag;
 
         $serviceOrderDAO->create($serviceOrder);
@@ -868,9 +868,9 @@ class DAOTest extends TestCase
         $items= $serviceOrderDAO->getItems();
         $serviceOrderDAO->populate("tags");
 
-        $this->assertEquals(546,$items[0]->getRelationshipsData()['tags'][1]->position);
-        $this->assertEquals(529,$items[0]->getRelationshipsData()['tags'][2]->position);
-        $this->assertEquals(521,$items[0]->getRelationshipsData()['tags'][3]->position);
+        $this->assertEquals(546,$items[0]->getRelationshipsData()['tags'][1]->caption);
+        $this->assertEquals(529,$items[0]->getRelationshipsData()['tags'][2]->caption);
+        $this->assertEquals(521,$items[0]->getRelationshipsData()['tags'][3]->caption);
 
 
     }
@@ -890,18 +890,18 @@ class DAOTest extends TestCase
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 1";
-        $tag->relation_data_position = 546;
+        $tag->relation_data_caption = 546;
         $serviceOrder->tags[] =$tag;
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 2";
-        $tag->relation_data_position = 529;
+        $tag->relation_data_caption = 529;
         $serviceOrder->tags[] =$tag;
 
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 3";
-        $tag->relation_data_position = 521;
+        $tag->relation_data_caption = 521;
         $serviceOrder->tags[] =$tag;
 
         $serviceOrderDAO->create($serviceOrder);
@@ -913,20 +913,20 @@ class DAOTest extends TestCase
 
         $tag = new \tests\tag\Tag();
         $tag->id = 1;
-        $tag->relation_data_position = 10;
+        $tag->relation_data_caption = 10;
         $tag->relation_data_id = 1;
         $serviceOrder->tags[] = $tag;
 
 
         $tag = new \tests\tag\Tag();
         $tag->id = 2;
-        $tag->relation_data_position = 20;
+        $tag->relation_data_caption = 20;
         $tag->relation_data_id = 2;
         $serviceOrder->tags[] = $tag;
 
         $tag = new \tests\tag\Tag();
         $tag->id = 3;
-        $tag->relation_data_position = 30;
+        $tag->relation_data_caption = 30;
         $tag->relation_data_id = 3;
         $serviceOrder->tags[] = $tag;
 
@@ -940,9 +940,9 @@ class DAOTest extends TestCase
         $this->assertEquals(2,$items[0]->tags[1]->id);
         $this->assertEquals(3,$items[0]->tags[2]->id);
 
-        $this->assertEquals(10,$items[0]->getRelationshipsData()['tags'][1]->position);
-        $this->assertEquals(20,$items[0]->getRelationshipsData()['tags'][2]->position);
-        $this->assertEquals(30,$items[0]->getRelationshipsData()['tags'][3]->position);
+        $this->assertEquals(10,$items[0]->getRelationshipsData()['tags'][1]->caption);
+        $this->assertEquals(20,$items[0]->getRelationshipsData()['tags'][2]->caption);
+        $this->assertEquals(30,$items[0]->getRelationshipsData()['tags'][3]->caption);
 
         //Updates relation and changes element
 
@@ -954,14 +954,14 @@ class DAOTest extends TestCase
 
         $tag = new \tests\tag\Tag();
         $tag->name ="Nueva etiqueta 1";
-        $tag->relation_data_position = 50;
+        $tag->relation_data_caption = 50;
         $tag->relation_data_id = 1;
         $serviceOrder->tags[] = $tag;
 
 
         $tag = new \tests\tag\Tag();
         $tag->name ="Nueva etiqueta 2";
-        $tag->relation_data_position = 60;
+        $tag->relation_data_caption = 60;
         $tag->relation_data_id = 2;
         $serviceOrder->tags[] = $tag;
 
@@ -980,9 +980,9 @@ class DAOTest extends TestCase
         $this->assertEquals(5,$items[0]->tags[1]->id);
         $this->assertEquals(6,$items[0]->tags[2]->id);
 
-        $this->assertEquals(50,$items[0]->getRelationshipsData()['tags'][4]->position);
-        $this->assertEquals(60,$items[0]->getRelationshipsData()['tags'][5]->position);
-        $this->assertEquals(30,$items[0]->getRelationshipsData()['tags'][6]->position);
+        $this->assertEquals(50,$items[0]->getRelationshipsData()['tags'][4]->caption);
+        $this->assertEquals(60,$items[0]->getRelationshipsData()['tags'][5]->caption);
+        $this->assertEquals(30,$items[0]->getRelationshipsData()['tags'][6]->caption);
 
         $this->assertCount( 3,$serviceOrderTagDAO->readAll());
 
@@ -1009,24 +1009,24 @@ class DAOTest extends TestCase
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 1";
-        $tag->relation_data_position = 546;
+        $tag->relation_data_caption = 546;
         $serviceOrder->tags[] = $tag;
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 2";
-        $tag->relation_data_position = 529;
+        $tag->relation_data_caption = 529;
         $serviceOrder->tags[] = $tag;
 
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 3";
-        $tag->relation_data_position = 521;
+        $tag->relation_data_caption = 521;
         $serviceOrder->tags[] = $tag;
 
 
         $tag = new \tests\tag\Tag();
         $tag->name = "Tag 4";
-        $tag->relation_data_position = 525;
+        $tag->relation_data_caption = 525;
         $serviceOrder->tags[] = $tag;
 
         $serviceOrderDAO->create($serviceOrder);
