@@ -499,12 +499,16 @@ abstract class CoreDAO implements ICoreDAO
                     $key = $property;
                     $value = $params["model"]->$property;
 
-                    $annotations = $this->processPopulateAnnotations($key);
-                    if(!$annotations || empty($annotations["dao"]))
+                    //Si la propiedad existe en la clase
+                    if(property_exists($this->getModel(true),$key))
                     {
-                        $value = !is_array($value)?$value:json_encode($value);
-                        $set[] = $this->prefix."_".$key." = ?" ;
-                        $input_parameters[] = $value;
+                        $annotations = $this->processPopulateAnnotations($key);
+                        if(!$annotations || empty($annotations["dao"]))
+                        {
+                            $value = !is_array($value)?$value:json_encode($value);
+                            $set[] = $this->prefix."_".$key." = ?" ;
+                            $input_parameters[] = $value;
+                        }
                     }
 
                 }
