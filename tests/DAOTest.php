@@ -2166,6 +2166,31 @@ class DAOTest extends TestCase
 
     }
 
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testSavingNotExistantProperty($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+        $image = new \tests\image\Image();
+        $image->name = '9.svg';
+        $image->size = 12313;
+        $image->extension = 'svg';
+        $image->url = "http://demo.com/images/9.svg";
+        $imageDAO->create($image);
+
+        $imageDAO->readAll();
+
+        $this->assertEquals(1,$imageDAO->getItems()[0]->id);
+
+        $this->assertEquals(false,isset($imageDAO->getItems()[0]->url));
+
+
+    }
 
     public function daoProvider()
     {

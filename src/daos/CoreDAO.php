@@ -918,153 +918,158 @@ abstract class CoreDAO implements ICoreDAO
          foreach ($properties as $property)
          {
              $key = $property;
-             $annotations = $this->processPopulateAnnotations($key);
-             if(isset($model->$key) && $annotations && !empty($annotations["dao"]))
+             //Si la propiedad existe en la clase
+             if(property_exists($this->getModel(true),$key))
              {
-
-                 $value = $model->$key;
-
-                 /**
-                  * @var $ExternalDAO ICoreDAO
-                  */
-                 $ExternalDAO = $annotations["dao"];
-                 //FIXME: Arreglar esto!
-                 eval('$ExternalDAO = new $ExternalDAO($this->connection);');
-
-                 if(isset($annotations["link_dao"]))
+                 $annotations = $this->processPopulateAnnotations($key);
+                 if(isset($model->$key) && $annotations && !empty($annotations["dao"]))
                  {
-                     $value = !is_array($value)? [$value]:$value;
 
+                     $value = $model->$key;
 
-                     $LinkDAO = $annotations["link_dao"];
                      /**
-                      * @var $LinkDAO ICoreDAO
+                      * @var $ExternalDAO ICoreDAO
                       */
+                     $ExternalDAO = $annotations["dao"];
                      //FIXME: Arreglar esto!
-                     eval('$LinkDAO = new $LinkDAO($this->connection);');
+                     eval('$ExternalDAO = new $ExternalDAO($this->connection);');
 
-
-                     foreach ($value as $k=>$v)
+                     if(isset($annotations["link_dao"]))
                      {
-                         $toDelete = false;
-                         $Link = $LinkDAO->getModel();
+                         $value = !is_array($value)? [$value]:$value;
 
-                         if(!is_a($Link,LinkModel::class))
+
+                         $LinkDAO = $annotations["link_dao"];
+                         /**
+                          * @var $LinkDAO ICoreDAO
+                          */
+                         //FIXME: Arreglar esto!
+                         eval('$LinkDAO = new $LinkDAO($this->connection);');
+
+
+                         foreach ($value as $k=>$v)
                          {
-                             throw new DAOException("El objeto link debe ser del tipo ".LinkModel::class);
-                         }
+                             $toDelete = false;
+                             $Link = $LinkDAO->getModel();
 
-                         foreach ($v as $h => $i)
-                         {
-
-                             if(strpos($h,"relation_data_") === 0)
+                             if(!is_a($Link,LinkModel::class))
                              {
-                                 /*
-                                 $prop = str_replace("relation_data_","",$h);
-                                 $Link->$prop = $i;
-                                 unset($model->$key[$k]->$h);
-                                 */
-                                 $prop = str_replace("relation_data_","",$h);
+                                 throw new DAOException("El objeto link debe ser del tipo ".LinkModel::class);
+                             }
 
+                             foreach ($v as $h => $i)
+                             {
 
-
-                                 if($prop !== "delete"){
-                                     $Link->$prop = $i;
-
-                                     unset($model->$key[$k]->$h);
-                                 }
-                                 elseif($i === true)
+                                 if(strpos($h,"relation_data_") === 0)
                                  {
-                                     if(( isset($v->relation_data_id) && is_numeric($v->relation_data_id)) || (isset($Link->id) && is_numeric($Link->id)))
-                                     {
+                                     /*
+                                     $prop = str_replace("relation_data_","",$h);
+                                     $Link->$prop = $i;
+                                     unset($model->$key[$k]->$h);
+                                     */
+                                     $prop = str_replace("relation_data_","",$h);
 
-                                         $toDelete=true;
+
+
+                                     if($prop !== "delete"){
+                                         $Link->$prop = $i;
+
+                                         unset($model->$key[$k]->$h);
+                                     }
+                                     elseif($i === true)
+                                     {
+                                         if(( isset($v->relation_data_id) && is_numeric($v->relation_data_id)) || (isset($Link->id) && is_numeric($Link->id)))
+                                         {
+
+                                             $toDelete=true;
+                                         }
+
                                      }
 
                                  }
-
                              }
-                         }
 
 
-                         //Seteo la posicion en el array
-                         $Link->position = $k;
+                             //Seteo la posicion en el array
+                             $Link->position = $k;
 
-                         if($toDelete)
-                         {
-
-                             /**
-                              * Chequeo si el objeto no es del tipo correcto.
-                             si es un objeto, debe corresponder al tipo del
-                             elemento a desasociar, y sino, debe ser un array con los datos correspondientes
-                              */
-                             if(!is_array($v) && !is_a($v,$ExternalDAO->getModel(true)))
-                           {
-                               throw new DAOException("El elemento de la relación a eliminar no posee el tipo correcto. Se esperaba:".
-                                   $ExternalDAO->getModel(true)." y se obtuvo ".get_class($v));
-                           }
-
-                           $LinkDAO->deleteById($Link->id);
-                         }
-                         else
-                         {
-
-                             $externalResource = $ExternalDAO->getResourceName();
-                             $localResource =  $this->getResourceName();
-                             $Link->$externalResource = $this->processItemToRelate($v,$ExternalDAO);
-                             $Link->$localResource = $model->id;
-                             //
-                             $Link->property = empty($annotations["parent_property"])?$key:$annotations["parent_property"];
-
-                             if(empty($Link->id))
+                             if($toDelete)
                              {
-                                 $LinkDAO->create($Link);
+
+                                 /**
+                                  * Chequeo si el objeto no es del tipo correcto.
+                                 si es un objeto, debe corresponder al tipo del
+                                 elemento a desasociar, y sino, debe ser un array con los datos correspondientes
+                                  */
+                                 if(!is_array($v) && !is_a($v,$ExternalDAO->getModel(true)))
+                                 {
+                                     throw new DAOException("El elemento de la relación a eliminar no posee el tipo correcto. Se esperaba:".
+                                         $ExternalDAO->getModel(true)." y se obtuvo ".get_class($v));
+                                 }
+
+                                 $LinkDAO->deleteById($Link->id);
                              }
-                             else{
+                             else
+                             {
 
-                                 $LinkDAO->update($Link);
+                                 $externalResource = $ExternalDAO->getResourceName();
+                                 $localResource =  $this->getResourceName();
+                                 $Link->$externalResource = $this->processItemToRelate($v,$ExternalDAO);
+                                 $Link->$localResource = $model->id;
+                                 //
+                                 $Link->property = empty($annotations["parent_property"])?$key:$annotations["parent_property"];
+
+                                 if(empty($Link->id))
+                                 {
+                                     $LinkDAO->create($Link);
+                                 }
+                                 else{
+
+                                     $LinkDAO->update($Link);
+                                 }
+
+                                 $v->relation_data_id = $Link->id;
+                                 $rd = $v->getRelationshipsData();
+                                 $rd[$key][$v->id] = $Link;
+                                 $v->setRelationshipsData($rd);
+
+                                 $savedRelationships[$key][] = $v;
                              }
 
-                             $v->relation_data_id = $Link->id;
-                             $rd = $v->getRelationshipsData();
-                             $rd[$key][$v->id] = $Link;
-                             $v->setRelationshipsData($rd);
 
+
+
+                         }
+
+                     }
+                     elseif(isset($annotations["external_field"]))
+                     {
+                         $value = !is_array($value)? [$value]:$value;
+                         $externalField = $annotations["external_field"];
+
+                         foreach ($value as $k=>$v)
+                         {
+
+                             $id = $this->processItemToRelate($v,$ExternalDAO);
+                             $externalModel = $ExternalDAO->getModel();
+                             $externalModel->id = $id;
+                             $externalModel->$externalField = $model->id;
+                             $ExternalDAO->update($externalModel);
                              $savedRelationships[$key][] = $v;
                          }
 
-
-
-
                      }
-
-                 }
-                 elseif(isset($annotations["external_field"]))
-                 {
-                     $value = !is_array($value)? [$value]:$value;
-                     $externalField = $annotations["external_field"];
-
-                     foreach ($value as $k=>$v)
+                     else
                      {
 
-                         $id = $this->processItemToRelate($v,$ExternalDAO);
-                         $externalModel = $ExternalDAO->getModel();
-                         $externalModel->id = $id;
-                         $externalModel->$externalField = $model->id;
-                         $ExternalDAO->update($externalModel);
-                         $savedRelationships[$key][] = $v;
+                         $id = $this->processItemToRelate($value,$ExternalDAO);
+                         $this->execute(["statement"=>"UPDATE ".$this->getResourceName()." SET ".$this->prefix."_{$key} = {$id} WHERE ".$this->prefix."_id = ".$model->id,"input_parameters"=>[]]);
+                         $savedRelationships[$key] = $value;
+                         //$this->update($modelToUpdate);
                      }
 
-                 }
-                 else
-                 {
 
-                     $id = $this->processItemToRelate($value,$ExternalDAO);
-                     $this->execute(["statement"=>"UPDATE ".$this->getResourceName()." SET ".$this->prefix."_{$key} = {$id} WHERE ".$this->prefix."_id = ".$model->id,"input_parameters"=>[]]);
-                     $savedRelationships[$key] = $value;
-                     //$this->update($modelToUpdate);
                  }
-
 
              }
 
