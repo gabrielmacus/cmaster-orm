@@ -725,9 +725,20 @@ abstract class CoreDAO implements ICoreDAO
                         foreach ($linkMap[$item->id] as $value)
                         {
                             //Seteo el id de la relacion en el objeto relacionado para evitar relaciones duplicadas al actualizar el objeto relacionado a este
-                            $item->relation_data_id = $value["link"]->id;
+                            //$item->relation_data_id = $value["link"]->id;
                             //Tambien seteo la posicion de la relacion, con motivos de ordenamiento
-                            $item->relation_data_position = $value["link"]->position;
+                            //$item->relation_data_position = $value["link"]->position;
+
+                            /**
+                             * Update 28/11/18: Cargo todos los datos de la relacion
+                             */
+                            foreach ($value["link"] as $relation_data_key => $relation_data_value)
+                            {
+                                $relation_data_key = "relation_data_{$relation_data_key}";
+
+                                $item->$relation_data_key = $relation_data_value;
+                            }
+
                             $map[$value["resource"]]->$property[] = $item;
                             $rd = $map[$value["resource"]]->getRelationshipsData();
                             $rd[$property][$item->id] = $value["link"];
