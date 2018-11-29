@@ -15,6 +15,9 @@ use models\CoreModel;
 use models\ICoreModel;
 use models\LinkModel;
 
+
+use Rakit\Validation\Validator;
+
 //TODO: ver la posibilidad de que el ordenamiento con el campo position sea separado en el padre y el hijo
 abstract class CoreDAO implements ICoreDAO
 {
@@ -68,6 +71,30 @@ abstract class CoreDAO implements ICoreDAO
     public function generatePrefix()
     {
         return $this->resource;
+    }
+
+    public function validate(CoreModel &$model,array $validationParams = null):bool
+    {
+        if($validationParams)
+        {
+            $validator = new Validator;
+
+            $validation = $validator->make( $model->jsonSerialize(),$validationParams);
+
+            $validation->validate();
+
+
+            if(!$validation->fails())
+            {
+                return true;
+            }
+
+            return $validation->errors();
+
+        }
+
+        return true;
+
     }
 
 
@@ -554,6 +581,8 @@ abstract class CoreDAO implements ICoreDAO
     {
         $model->created_at = date("Y-m-d H:i:s");
 
+        $this->validate($model);
+
         $this->beforeCreate($model);
 
         $query =$this->processUpsertDelete(["model"=>$model,"action"=>"INSERT"]);
@@ -589,6 +618,8 @@ abstract class CoreDAO implements ICoreDAO
         $model->updated_at = date("Y-m-d H:i:s");
 
         $where = $where ?? [["prop"=>"id","value"=>$model->id,"operator"=>"="]];
+
+        $this->validate($model);
 
         $this->beforeUpdate($model,$where);
 

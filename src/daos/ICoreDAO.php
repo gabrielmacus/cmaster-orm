@@ -62,6 +62,16 @@ interface ICoreDAO
 
     public function getConnection();
 
+
+    /**
+     * Para sobrescribir en los hijos y pasar los parámetros de validación
+     * @param CoreModel $model
+     * @param array|null $validationParams
+     * @return bool
+     */
+    public function validate(CoreModel &$model,array $validationParams = null):bool;
+
+
     public function create(ICoreModel &$model);
 
     public function read(array $params);

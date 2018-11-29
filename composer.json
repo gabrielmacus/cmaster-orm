@@ -1,9 +1,10 @@
 {
     "name": "cmaster/orm",
     "require": {
-        "php": ">=7.0.0"
+        "php": ">=7.0.0",
+        "rakit/validation":"^1.0.0"
     },
-    "version": "0.7.0",
+    "version": "0.8.0",
     "minimum-stability": "dev",
     "prefer-stable": true,
     "autoload": {
