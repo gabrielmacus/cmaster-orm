@@ -11,6 +11,7 @@ namespace daos;
 use db\IConnection;
 use db\IPagination;
 use exceptions\DAOException;
+use exceptions\ModelValidationException;
 use models\CoreModel;
 use models\ICoreModel;
 use models\LinkModel;
@@ -89,7 +90,7 @@ abstract class CoreDAO implements ICoreDAO
                 return true;
             }
 
-            return $validation->errors();
+            throw new ModelValidationException($validation->errors());
 
         }
 
@@ -581,6 +582,8 @@ abstract class CoreDAO implements ICoreDAO
     {
         $model->created_at = date("Y-m-d H:i:s");
 
+        $this->beforeValidation($model);
+
         $this->validate($model);
 
         $this->beforeCreate($model);
@@ -618,6 +621,8 @@ abstract class CoreDAO implements ICoreDAO
         $model->updated_at = date("Y-m-d H:i:s");
 
         $where = $where ?? [["prop"=>"id","value"=>$model->id,"operator"=>"="]];
+
+        $this->beforeValidation($model);
 
         $this->validate($model);
 
@@ -1139,7 +1144,13 @@ abstract class CoreDAO implements ICoreDAO
          return $savedRelationships;
     }
 
+
+
     /** Hooks **/
+    public function beforeValidation(ICoreModel &$model)
+    {
+        // TODO: Implement beforeValidation() method.
+    }
 
     public function afterCreate(ICoreModel &$model)
     {

@@ -11,6 +11,7 @@ namespace daos;
 
 use db\IPagination;
 use exceptions\DAOException;
+use exceptions\ModelValidationException;
 use models\CoreModel;
 use models\ICoreModel;
 
@@ -68,6 +69,7 @@ interface ICoreDAO
      * @param CoreModel $model
      * @param array|null $validationParams
      * @return bool
+     * @throws ModelValidationException
      */
     public function validate(CoreModel &$model,array $validationParams = null):bool;
 
@@ -178,6 +180,13 @@ interface ICoreDAO
     public function processItemToRelate(&$item,ICoreDAO $dao = null);
 
     /** Hooks**/
+
+    /**
+     * Funcion ejecutada antes de validar
+     * @param ICoreModel $model Item a validar
+     * @return void
+     */
+    public function beforeValidation(ICoreModel &$model);
 
     /**
      * Funcion ejecutada despues de ser guardado un item en la base de datos.
