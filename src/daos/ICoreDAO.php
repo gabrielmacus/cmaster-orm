@@ -66,12 +66,15 @@ interface ICoreDAO
 
     /**
      * Para sobrescribir en los hijos y pasar los parámetros de validación
+     * @see https://github.com/rakit/validation
      * @param CoreModel $model
      * @param array|null $validationParams
+     * @param array|null $messages
+     * @param array|null $aliases
      * @return bool
      * @throws ModelValidationException
      */
-    public function validate(CoreModel &$model,array $validationParams = null):bool;
+    public function validate(CoreModel &$model,array $validationParams = null,array $messages = null,array $aliases = null):bool;
 
 
     public function create(ICoreModel &$model);

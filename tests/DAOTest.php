@@ -2217,7 +2217,7 @@ class DAOTest extends TestCase
         }
         catch (\exceptions\ModelValidationException $exception)
         {
-            $this->assertEquals($exception->getValidationErrors()["name"]["required"],"The Name is required");
+            $this->assertEquals($exception->getValidationErrors()["name"]["required"],"Nombre es requerido");
 
 
         }

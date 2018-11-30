@@ -74,13 +74,21 @@ abstract class CoreDAO implements ICoreDAO
         return $this->resource;
     }
 
-    public function validate(CoreModel &$model,array $validationParams = null):bool
+    public function validate(CoreModel &$model, array $validationParams = null, array $messages = null, array $aliases = null): bool
     {
         if($validationParams)
         {
             $validator = new Validator;
 
             $validation = $validator->make( $model->jsonSerialize(),$validationParams);
+
+            if($messages)
+            {
+                $validation->setMessages($messages);
+            }
+            if($aliases){
+                $validation->setAliases($aliases);
+            }
 
             $validation->validate();
 
@@ -95,7 +103,6 @@ abstract class CoreDAO implements ICoreDAO
         }
 
         return true;
-
     }
 
 
