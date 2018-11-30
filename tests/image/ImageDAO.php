@@ -7,11 +7,12 @@
  */
 
 namespace tests\image;
+use models\CoreModel;
+use models\ICoreModel;
 use tests\multimedia\MultimediaDAO;
 
 class ImageDAO extends MultimediaDAO
 {
-
 
 
 }

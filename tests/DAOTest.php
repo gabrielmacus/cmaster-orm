@@ -2172,7 +2172,7 @@ class DAOTest extends TestCase
      * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
      * @param $tagDAO \tests\tag\TagDAO
      * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
-     * @param $imageDAO \tests\image\ImageDAO
+     * @param $imageDAO \tests\image\ImageDAO 
      */
     public function testSavingNotExistantProperty($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
     {
@@ -2192,6 +2192,42 @@ class DAOTest extends TestCase
 
     }
 
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     * @param $productDAO \tests\product\ProductDAO
+     */
+    public function testValidate($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO,$productDAO)
+    {
+        $product = new \tests\product\Product();
+        $product->name = 'Alfajores de maicena';
+        $productDAO->create($product);
+
+        try
+        {
+            $product = new \tests\product\Product();
+            $productDAO->create($product);
+            $this->fail("Expected exception not thrown");
+
+
+        }
+        catch (\exceptions\ModelValidationException $exception)
+        {
+            $this->assertEquals($exception->getValidationErrors()["name"]["required"],"The Name is required");
+
+
+        }
+
+
+
+    }
+
+
+
     public function daoProvider()
     {
         $connection = new \db\SqlConnection("mysql:host=localhost;dbname=tachyon_test", "root", "powersoccergbi");
@@ -2200,8 +2236,8 @@ class DAOTest extends TestCase
         $tagDAO =  new \tests\tag\TagDAO($connection);
         $serviceOrderTagDAO = new \tests\service_order_tag\ServiceOrderTagDAO($connection);
         $imageDAO = new \tests\image\ImageDAO($connection);
-
-        return [[$customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO]];
+        $productDAO = new \tests\product\ProductDAO($connection);
+        return [[$customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO,$productDAO]];
     }
 
 

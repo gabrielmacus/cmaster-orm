@@ -90,7 +90,7 @@ abstract class CoreDAO implements ICoreDAO
                 return true;
             }
 
-            throw new ModelValidationException($validation->errors());
+            throw new ModelValidationException($validation->errors()->toArray());
 
         }
 
