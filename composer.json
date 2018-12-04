@@ -4,7 +4,7 @@
         "php": ">=7.0.0",
         "rakit/validation":"^1.0.0"
     },
-    "version": "0.8.0",
+    "version": "0.8.5",
     "minimum-stability": "dev",
     "prefer-stable": true,
     "autoload": {
