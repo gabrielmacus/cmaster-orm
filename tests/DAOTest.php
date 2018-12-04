@@ -1183,6 +1183,7 @@ class DAOTest extends TestCase
         $items = $imageDAO->getItems();
 
 
+
         $checkTagsServiceOrders = function ($tags)
         {
          foreach ($tags as $tag)
@@ -1190,6 +1191,7 @@ class DAOTest extends TestCase
              switch ($tag->id)
              {
                  case 1:
+
 
                      $serviceOrders = array_map(function($el){return $el->id;},$tag->serviceOrders);
                      $this->assertCount(2,$serviceOrders);
@@ -2192,6 +2194,9 @@ class DAOTest extends TestCase
 
     }
 
+
+
+
     /**
      * @dataProvider daoProvider
      * @param $customerDAO \tests\customer\CustomerDAO
@@ -2222,6 +2227,106 @@ class DAOTest extends TestCase
 
         }
 
+
+
+    }
+
+
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testMultipleItemsWithRelatedItemsInCommon($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+
+        /**
+         * Este test fue creado debido a un error en el que se me mezclaban las imagenes de los posts al traerlos juntos
+         */
+
+
+        $tag3 = new \tests\tag\Tag();
+        $tag3->name ='Post con imagenes. Prueba 1';
+
+        $tag2 = new \tests\tag\Tag();
+        $tag2->name =  'Post con imágenes. Prueba 2';
+
+
+        $tag1 = new \tests\tag\Tag();
+        $tag1->name = 'as{daadpo';
+
+
+
+
+        $image1 = new \tests\image\Image();
+        $image1->name = 'giphy (1).gif';
+        $image1->size = 12313;
+        $image1->extension = 'gif';
+        $image1->url = "http://demo.com/images/9.svg";
+        $imageDAO->create($image1);
+
+        $image2 = new \tests\image\Image();
+        $image2->name = 'Cientificos universo desvanece';
+        $image2->size = 12313;
+        $image2->extension = 'jpg';
+        $image2->url = "http://demo.com/images/9.svg";
+        $imageDAO->create($image2);
+
+        $image3 = new \tests\image\Image();
+        $image3->name = '1073303215.jpg';
+        $image3->size = 12313;
+        $image3->extension = 'jpg';
+        $image3->url = "http://demo.com/images/9.svg";
+        $imageDAO->create($image3);
+
+
+        $tag1->images[] =clone $image1;
+        $tagDAO->create($tag1);
+
+        $tag2->images[] = clone $image2;
+        $tag2->images[]=clone $image1;
+        $tag2->images[]=clone $image3;
+        $tagDAO->create($tag2);
+
+        $tag3->images[]=clone $image3;
+        $tag3->images[]=clone $image2;
+        $tagDAO->create($tag3);
+
+
+        $tagDAO->read(["order"=>["+id"]]);
+        $tagDAO->populate("images");
+        $tags = $tagDAO->getItems();
+
+        $this->assertCount(1,$tags[0]->images);
+        $this->assertCount(3,$tags[1]->images);
+        $this->assertCount(2,$tags[2]->images);
+
+        $this->assertEquals("giphy (1).gif",$tags[0]->images[0]->name);
+
+        $this->assertEquals("Cientificos universo desvanece",$tags[1]->images[0]->name);
+        $this->assertEquals("giphy (1).gif",$tags[1]->images[1]->name);
+        $this->assertEquals("1073303215.jpg",$tags[1]->images[2]->name);
+
+
+        $this->assertEquals("1073303215.jpg",$tags[2]->images[0]->name);
+        $this->assertEquals("Cientificos universo desvanece",$tags[2]->images[1]->name);
+
+        //
+        $imageDAO->read(["order"=>["+id"]]);
+        $imageDAO->populate("tags");
+        $images = $imageDAO->getItems();
+
+        $this->assertCount(2,$images[0]->tags);
+        $this->assertCount(2,$images[1]->tags);
+        $this->assertCount(2,$images[2]->tags);
+
+  /*      $this->assertCount("as{daadpo",$images[0]->tags[0]->name);
+        $this->assertCount("Post con imágenes. Prueba 2",$images[0]->tags[1]->name);
+*/
 
 
     }

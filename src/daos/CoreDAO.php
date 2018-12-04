@@ -240,8 +240,6 @@ abstract class CoreDAO implements ICoreDAO
 
        $statement ="SELECT {$fields} FROM {$this->resource} ".(!empty($where)?"WHERE ".implode(" AND ",$where):"").$order.$pagination;
 
-
-
         return ["statement"=>$statement,"input_parameters"=>$input_parameters];
     }
 
@@ -690,7 +688,7 @@ abstract class CoreDAO implements ICoreDAO
 
         if(isset($localPopData["link_dao"]))
         {
-            //Muchos a muchos
+            //Mchos a muchos
             //FIXME:Correct this
             /**
              * @var $LinkDAO ICoreDAO
@@ -763,10 +761,27 @@ abstract class CoreDAO implements ICoreDAO
 
                     $itemsToPopulateWith = $ExternalDAO->read($query);
 
+                    $alreadyPopulatedWith = [];
+
                     foreach ($itemsToPopulateWith as $item)
                     {
                         foreach ($linkMap[$item->id] as $value)
                         {
+                            /**
+                             * TODO: Anyway, review this fix
+                             * Fix 04/12/2018: Clono los elementos que ya fueron utilizados para poblar una variable, debido a que estos pueden generar conflictos
+                             */
+                            if(empty($alreadyPopulatedWith[$item->id]))
+                            {
+                                $clonedItem =   $item;
+                                $alreadyPopulatedWith[$item->id]=true;
+                            }
+                            else
+                            {
+                                $clonedItem =  clone $item;
+                            }
+
+
                             //Seteo el id de la relacion en el objeto relacionado para evitar relaciones duplicadas al actualizar el objeto relacionado a este
                             //$item->relation_data_id = $value["link"]->id;
                             //Tambien seteo la posicion de la relacion, con motivos de ordenamiento
@@ -779,22 +794,24 @@ abstract class CoreDAO implements ICoreDAO
                             {
                                 $relation_data_key = "relation_data_{$relation_data_key}";
 
-                                $item->$relation_data_key = $relation_data_value;
+                                $clonedItem->$relation_data_key = $relation_data_value;
                             }
 
-                            $map[$value["resource"]]->$property[] = $item;
+                            $map[$value["resource"]]->$property[] = $clonedItem;
                             $rd = $map[$value["resource"]]->getRelationshipsData();
-                            $rd[$property][$item->id] = $value["link"];
+                            $rd[$property][$clonedItem->id] = $value["link"];
                             $map[$value["resource"]]->setRelationshipsData($rd);
                         }
                     }
 
+
                     //Si los resultados fueron ordenados por posicion, los ordeno de esta manera en el array tambien
                     if($orderByPosition)
                     {
-                        foreach ($map as $item)
+                        foreach ($map as $k => $item)
                         {
-                            usort($item->$property, function($a,$b){
+
+                            usort($map[$k]->$property, function($a,$b){
 
                                 if ($a->relation_data_position == $b->relation_data_position) {
                                     return 0;
@@ -967,6 +984,8 @@ abstract class CoreDAO implements ICoreDAO
     public function saveRelationships(ICoreModel &$model)
     {
 
+
+
         $savedRelationships = [];
         $properties = $model->getProperties(true);
          foreach ($properties as $property)
@@ -1073,6 +1092,7 @@ abstract class CoreDAO implements ICoreDAO
                                  //
                                  $Link->property = empty($annotations["parent_property"])?$key:$annotations["parent_property"];
 
+
                                  if(empty($Link->id))
                                  {
                                      $LinkDAO->create($Link);
@@ -1082,10 +1102,19 @@ abstract class CoreDAO implements ICoreDAO
                                      $LinkDAO->update($Link);
                                  }
 
+
                                  $v->relation_data_id = $Link->id;
                                  $rd = $v->getRelationshipsData();
                                  $rd[$key][$v->id] = $Link;
                                  $v->setRelationshipsData($rd);
+
+/*
+                                 if(isset($model->name) && $model->name == 'as{daadpo')
+                                 {
+                                     var_dump($v);
+                                     exit();
+                                 }*/
+
 
                                  $savedRelationships[$key][] = $v;
                              }
