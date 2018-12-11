@@ -154,6 +154,11 @@ abstract class CoreDAO implements ICoreDAO
         return ["-id"];
     }
 
+    public function getPrefix()
+    {
+        return $this->prefix;
+    }
+
 
     /**
      * Procesa los parametros de consulta, por ejemplo podrian provenir de la variable
@@ -164,7 +169,7 @@ abstract class CoreDAO implements ICoreDAO
      * @return array
      *
      */
-    public function processQuery(array $params):array
+    public function processQuery(array $params,bool $whereOnly = false):array
     {
         /**
          * @var $model CoreModel
@@ -200,6 +205,55 @@ abstract class CoreDAO implements ICoreDAO
        {
            foreach ($params["where"] as $k => $param)
            {
+
+
+               if(!empty($param["prop"]) &&  !empty($param["where"]) && is_array($param["where"]))
+               {
+                   $annotations  = $this->processPopulateAnnotations($param["prop"]);
+                   if(!empty($annotations))
+                   {
+                       //Busqueda con join (?)
+                       $operator = empty($param["operator"]) || !in_array($param["operator"],['IN','NOT IN']) ? "IN" : $param["operator"];
+
+                       if(!empty($annotations["link_dao"]))
+                       {
+                           //Many to many
+                           /**
+                            * @var $LinkDAO CoreDAO
+                            */
+                           //TODO: Correct this
+                           eval('$LinkDAO = new '.$annotations["link_dao"].'($this->connection);');
+
+                           /**
+                            * @var $ExternalDAO CoreDAO
+                            */
+                           //TODO: Correct this
+                           eval('$ExternalDAO = new '.$annotations["dao"].'($this->connection);');
+
+                           $idField =$LinkDAO->getPrefix()."_".$this->getResourceName();
+                           $idExternalField =$LinkDAO->getPrefix()."_".$ExternalDAO->getResourceName();
+                           $table = $ExternalDAO->getResourceName();
+                           $linkTable=$LinkDAO->getResourceName();
+                           $query = $ExternalDAO->processQuery(["where"=>$param["where"]],true);
+
+                           $linkSql = "SELECT {$idField}
+                            FROM {$table} LEFT JOIN {$linkTable} 
+                            ON {$ExternalDAO->getPrefix()}_id = {$idExternalField} WHERE ({$query["statement"]}) AND {$LinkDAO->getPrefix()}_deleted_at IS ? AND {$ExternalDAO->getPrefix()}_deleted_at IS ? GROUP BY {$idField}";
+
+                           $where[]= $this->prefix."_id $operator ($linkSql)";
+
+                           $input_parameters = array_merge($input_parameters,$query["input_parameters"]);
+                           $input_parameters[] =  null;
+                           $input_parameters[] = null;
+
+
+
+                       }
+
+                       //TODO: Programar busqueda en muchos a uno y uno a muchos
+
+                   }
+               }
                if(!empty($param["prop"]) &&  array_key_exists("value",$param))
                {
                    $paramResult = $this->processParam($param);
@@ -238,7 +292,13 @@ abstract class CoreDAO implements ICoreDAO
            $this->paginationData = $params["pagination"];
        }
 
-       $statement ="SELECT {$fields} FROM {$this->resource} ".(!empty($where)?"WHERE ".implode(" AND ",$where):"").$order.$pagination;
+       $whereStatement = implode(" AND ",$where);
+       if($whereOnly)
+       {
+           return ["statement"=>$whereStatement,"input_parameters"=>$input_parameters];
+       }
+
+       $statement ="SELECT {$fields} FROM {$this->resource} ".(!empty($where)?"WHERE ".$whereStatement:"").$order.$pagination;
 
         return ["statement"=>$statement,"input_parameters"=>$input_parameters];
     }

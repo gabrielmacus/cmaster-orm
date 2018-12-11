@@ -2331,6 +2331,158 @@ class DAOTest extends TestCase
 
     }
 
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     */
+    public function testQueryByPopulatedProperty($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO)
+    {
+
+        $tag1 = new \tests\tag\Tag();
+        $tag1->name = "Deportes";
+        $tagDAO->create($tag1);
+
+        $tag2 = new \tests\tag\Tag();
+        $tag2->name = "Tecnicatura";
+        $tagDAO->create($tag2);
+
+        $tag3 = new \tests\tag\Tag();
+        $tag3->name = "Lectura";
+        $tagDAO->create($tag3);
+
+        $tag4 = new \tests\tag\Tag();
+        $tag4->name = "Trabajo";
+        $tagDAO->create($tag4);
+
+
+
+        for($i=1;$i<=8;$i++){
+
+           $image = new \tests\image\Image();
+           $image->name = '8.jpg';
+           $image->size = 5675675;
+           $image->extension = 'jpg';
+
+
+           switch ($i)
+           {
+               case 1:
+               case 2:
+
+                   $image->tags[] = clone $tag1;
+
+                   if($i == 1)
+                   {
+                       $image->tags[] = clone $tag2;
+                       $image->tags[] = clone $tag3;
+                       $image->tags[] = clone $tag4;
+                   }
+
+                   break;
+               case 3:
+               case 4:
+               $image->tags[] = clone $tag2;
+               break;
+               case 5:
+               case 6:
+               $image->tags[] = clone $tag3;
+               break;
+               case 7:
+               case 8:
+               $image->tags[] =  clone $tag4;
+               break;
+           }
+            $imageDAO->create($image);
+            $images[] = $image;
+       }
+
+        $images = $imageDAO->read([
+            "order"=>["+id"],
+            "where"=>[["prop"=>"tags","where"=>[ ["prop"=>"name","value"=>"Trabajo"] ]]]
+        ]);
+        $imageDAO->populate("tags",["order"=>["+id"]]);
+
+        $this->assertCount(3,$images);
+        $this->assertEquals($images[0]->id,1);
+        $this->assertEquals($images[1]->id,7);
+        $this->assertEquals($images[2]->id,8);
+
+        $images = $imageDAO->read([
+            "order"=>["+id"],
+            "where"=>[["prop"=>"tags","where"=>[ ["prop"=>"name","value"=>"Lectura"] ]]]
+        ]);
+        $imageDAO->populate("tags",["order"=>["+id"]]);
+
+        $this->assertCount(3,$images);
+        $this->assertEquals($images[0]->id,1);
+        $this->assertEquals($images[1]->id,5);
+        $this->assertEquals($images[2]->id,6);
+
+
+        $images = $imageDAO->read([
+            "order"=>["+id"],
+            "where"=>[["prop"=>"tags","where"=>[ ["prop"=>"name","value"=>"Tecnicatura"] ]]]
+        ]);
+        $imageDAO->populate("tags",["order"=>["+id"]]);
+
+        $this->assertCount(3,$images);
+        $this->assertEquals($images[0]->id,1);
+        $this->assertEquals($images[1]->id,3);
+        $this->assertEquals($images[2]->id,4);
+
+
+
+        $images = $imageDAO->read([
+            "order"=>["+id"],
+            "where"=>[["prop"=>"tags","where"=>[ ["prop"=>"name","value"=>"Deportes"] ]]]
+        ]);
+        $imageDAO->populate("tags",["order"=>["+id"]]);
+
+        $this->assertCount(2,$images);
+        $this->assertEquals($images[0]->id,1);
+        $this->assertEquals($images[1]->id,2);
+
+
+        $images = $imageDAO->read([
+            "order"=>["+id"],
+            "where"=>[["prop"=>"tags","where"=>[ ["prop"=>"name","value"=>"%ura","operator"=>"LIKE"] ]]]
+        ]);
+        $imageDAO->populate("tags",["order"=>["+id"]]);
+
+        $this->assertCount(5,$images);
+
+        $this->assertEquals($images[0]->id,1);
+        $this->assertEquals($images[1]->id,3);
+        $this->assertEquals($images[2]->id,4);
+        $this->assertEquals($images[3]->id,5);
+        $this->assertEquals($images[4]->id,6);
+
+
+
+
+        $images = $imageDAO->read([
+            "order"=>["+id"],
+            "where"=>[["prop"=>"id","value"=>3,"operator"=>">"],["prop"=>"id","value"=>6,"operator"=>"<"],["prop"=>"tags","where"=>[ ["prop"=>"name","value"=>"%ura","operator"=>"LIKE"] ]]]
+        ]);
+        $imageDAO->populate("tags",["order"=>["+id"]]);
+
+        $this->assertCount(2,$images);
+
+        $this->assertEquals($images[0]->id,4);
+        $this->assertEquals($images[1]->id,5);
+
+
+
+
+
+
+
+    }
+
 
 
     public function daoProvider()

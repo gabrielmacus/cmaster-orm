@@ -26,6 +26,8 @@ interface ICoreDAO
 
     public function generatePrefix();
 
+    public function getPrefix();
+
     public function getItems();
 
     public function getResourceName();
@@ -41,9 +43,10 @@ interface ICoreDAO
     /**
      * Procesa el array con parametros de consulta y devuelve un string u objeto de consulta
      * @param array $params
+     * @param bool $whereOnly Determina si devuelvo solo el where o la consulta completa
      * @return mixed
      */
-    public function processQuery(array $params);
+    public function processQuery(array $params,bool $whereOnly = false);
 
     /**
      * Procesa un parámetro de consulta de forma individual
