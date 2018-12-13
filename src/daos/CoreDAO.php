@@ -159,6 +159,60 @@ abstract class CoreDAO implements ICoreDAO
         return $this->prefix;
     }
 
+    public function processExternalParam(array $param)
+    {
+        $input_parameters = [];
+        $where = false;
+
+
+        $annotations  = $this->processPopulateAnnotations($param["prop"]);
+        if(!empty($annotations))
+        {
+            //Busqueda con join (?)
+            $operator = empty($param["operator"]) || !in_array($param["operator"],['IN','NOT IN']) ? "IN" : $param["operator"];
+
+            if(!empty($annotations["link_dao"]))
+            {
+                //Many to many
+                /**
+                 * @var $LinkDAO CoreDAO
+                 */
+                //TODO: Correct this
+                eval('$LinkDAO = new '.$annotations["link_dao"].'($this->connection);');
+
+                /**
+                 * @var $ExternalDAO CoreDAO
+                 */
+                //TODO: Correct this
+                eval('$ExternalDAO = new '.$annotations["dao"].'($this->connection);');
+
+                $idField =$LinkDAO->getPrefix()."_".$this->getResourceName();
+                $idExternalField =$LinkDAO->getPrefix()."_".$ExternalDAO->getResourceName();
+                $table = $ExternalDAO->getResourceName();
+                $linkTable=$LinkDAO->getResourceName();
+                $query = $ExternalDAO->processQuery(["where"=>$param["where"]],true);
+
+                $linkSql = "SELECT {$idField}
+                            FROM {$table} LEFT JOIN {$linkTable} 
+                            ON {$ExternalDAO->getPrefix()}_id = {$idExternalField} WHERE ({$query["statement"]}) AND {$LinkDAO->getPrefix()}_deleted_at IS ? AND {$ExternalDAO->getPrefix()}_deleted_at IS ? GROUP BY {$idField}";
+
+                $where= $this->prefix."_id $operator ($linkSql)";
+
+                $input_parameters = array_merge($input_parameters,$query["input_parameters"]);
+                $input_parameters[] =  null;
+                $input_parameters[] = null;
+
+
+
+            }
+
+            //TODO: Programar busqueda en muchos a uno y uno a muchos
+
+        }
+
+        return [$input_parameters,$where];
+    }
+
 
     /**
      * Procesa los parametros de consulta, por ejemplo podrian provenir de la variable
@@ -205,56 +259,12 @@ abstract class CoreDAO implements ICoreDAO
        {
            foreach ($params["where"] as $k => $param)
            {
-
-
+               /*
                if(!empty($param["prop"]) &&  !empty($param["where"]) && is_array($param["where"]))
                {
-                   $annotations  = $this->processPopulateAnnotations($param["prop"]);
-                   if(!empty($annotations))
-                   {
-                       //Busqueda con join (?)
-                       $operator = empty($param["operator"]) || !in_array($param["operator"],['IN','NOT IN']) ? "IN" : $param["operator"];
 
-                       if(!empty($annotations["link_dao"]))
-                       {
-                           //Many to many
-                           /**
-                            * @var $LinkDAO CoreDAO
-                            */
-                           //TODO: Correct this
-                           eval('$LinkDAO = new '.$annotations["link_dao"].'($this->connection);');
-
-                           /**
-                            * @var $ExternalDAO CoreDAO
-                            */
-                           //TODO: Correct this
-                           eval('$ExternalDAO = new '.$annotations["dao"].'($this->connection);');
-
-                           $idField =$LinkDAO->getPrefix()."_".$this->getResourceName();
-                           $idExternalField =$LinkDAO->getPrefix()."_".$ExternalDAO->getResourceName();
-                           $table = $ExternalDAO->getResourceName();
-                           $linkTable=$LinkDAO->getResourceName();
-                           $query = $ExternalDAO->processQuery(["where"=>$param["where"]],true);
-
-                           $linkSql = "SELECT {$idField}
-                            FROM {$table} LEFT JOIN {$linkTable} 
-                            ON {$ExternalDAO->getPrefix()}_id = {$idExternalField} WHERE ({$query["statement"]}) AND {$LinkDAO->getPrefix()}_deleted_at IS ? AND {$ExternalDAO->getPrefix()}_deleted_at IS ? GROUP BY {$idField}";
-
-                           $where[]= $this->prefix."_id $operator ($linkSql)";
-
-                           $input_parameters = array_merge($input_parameters,$query["input_parameters"]);
-                           $input_parameters[] =  null;
-                           $input_parameters[] = null;
-
-
-
-                       }
-
-                       //TODO: Programar busqueda en muchos a uno y uno a muchos
-
-                   }
-               }
-               if(!empty($param["prop"]) &&  array_key_exists("value",$param))
+               }*/
+               if(!empty($param["prop"]) )
                {
                    $paramResult = $this->processParam($param);
 
@@ -357,28 +367,48 @@ abstract class CoreDAO implements ICoreDAO
         {
             throw new DAOException("El parámetro $param[prop] es inexistente");
         }
+        $statement = false;
 
-        $operator = $this->getDefaultComparisonOperator();
-
-        if(!empty($param["operator"]) && in_array(trim($param["operator"]),$this->getAllowedComparisonOperators()))
+        if(!empty($param["prop"]) &&  !empty($param["where"]) && is_array($param["where"]))
         {
-            $operator =$param["operator"];
+             $process = $this->processExternalParam($param);
+
+            return [$process[0],$process[1]];
+        }
+        elseif ( array_key_exists("value",$param))
+        {
+            $operator = $this->getDefaultComparisonOperator();
+
+            if(!empty($param["operator"]) && in_array(trim($param["operator"]),$this->getAllowedComparisonOperators()))
+            {
+                $operator =$param["operator"];
+            }
+
+            //Operadores especiales
+            if(in_array(trim($operator),["IN","NOT IN"]))
+            {
+                $placeholder = is_array($param["value"])? rtrim(str_repeat("?,",count($param["value"])),","):"?";
+
+                $statement = "{$this->prefix}_$param[prop] {$operator} ($placeholder)";
+            }
+            else
+            {
+                $statement = "{$this->prefix}_$param[prop] {$operator} ?";
+            }
+
+
+
+            return [$param["value"],$statement];
+
         }
 
-        //Operadores especiales
-        if(in_array(trim($operator),["IN","NOT IN"]))
-        {
-            $placeholder = is_array($param["value"])? rtrim(str_repeat("?,",count($param["value"])),","):"?";
 
-            $statement = "{$this->prefix}_$param[prop] {$operator} ($placeholder)";
-        }
-        else
-        {
-            $statement = "{$this->prefix}_$param[prop] {$operator} ?";
+        if(!$statement){
+            throw new DAOException("La consulta al parámetro $param[prop] tiene un formato incorrecto. Array de consulta: ".var_export($param,true));
         }
 
 
-        return [$param["value"],$statement];
+
     }
 
     /**

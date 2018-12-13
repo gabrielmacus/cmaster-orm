@@ -64,6 +64,12 @@ interface ICoreDAO
      */
     public function processParamGroup(array $paramGroup,string $operator = null);
 
+    /**
+     * Procesa un parametro de búsqueda relacionado a un campo de otro modelo asociado al modelo actual
+     * @param array $param
+     * @return mixed
+     */
+    public function processExternalParam(array $param);
     public function getConnection();
 
 

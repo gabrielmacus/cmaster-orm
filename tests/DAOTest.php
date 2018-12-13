@@ -2477,6 +2477,24 @@ class DAOTest extends TestCase
 
 
 
+        $images = $imageDAO->read([
+            "order"=>["+id"],
+            "where"=>[ ["prop"=>"id","value"=>1,"operator"=>"!="], [ "group"=>[
+
+                ["prop"=>"tags","where"=>[ ["prop"=>"name","value"=>"Trabajo","operator"=>"LIKE"] ]],
+                ["prop"=>"id","value"=>"2"]
+
+            ]  ,"operator"=>"OR"]]
+        ]);
+        $imageDAO->populate("tags",["order"=>["+id"]]);
+
+        $this->assertCount(3,$images);
+
+        $this->assertEquals($images[0]->id,2);
+        $this->assertEquals($images[1]->id,7);
+        $this->assertEquals($images[2]->id,8);
+
+
 
 
 
