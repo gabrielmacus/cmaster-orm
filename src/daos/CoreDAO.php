@@ -10,6 +10,7 @@ namespace daos;
 
 use db\IConnection;
 use db\IPagination;
+use db\SqlLogger;
 use exceptions\DAOException;
 use exceptions\ModelValidationException;
 use models\CoreModel;
@@ -310,6 +311,7 @@ abstract class CoreDAO implements ICoreDAO
 
        $statement ="SELECT {$fields} FROM {$this->resource} ".(!empty($where)?"WHERE ".$whereStatement:"").$order.$pagination;
 
+       //var_dump($statement);
         return ["statement"=>$statement,"input_parameters"=>$input_parameters];
     }
 
@@ -495,11 +497,19 @@ abstract class CoreDAO implements ICoreDAO
             throw new DAOException("Error al ejecutar la consulta. {$statement->errorInfo()[0]} - {$statement->errorInfo()[1]} - {$statement->errorInfo()[2]}");
         }
 
+        $logData = ["sql"=>SqlLogger::InterpolateQuery($query["statement"],$query["input_parameters"]),"model"=>$this->getModel(true)];
+
 
         if($conn->lastInsertId())
         {
+            $logData["insert_id"] = $conn->lastInsertId();
+
+
+            SqlLogger::getInstance()->append($logData);
+
             return $conn->lastInsertId();
         }
+
 
         //Lectura
 
@@ -512,8 +522,14 @@ abstract class CoreDAO implements ICoreDAO
             $countStatement = preg_replace("/LIMIT (\d*)/","",$query["statement"]);
             $countStatement = preg_replace("/OFFSET (\d*)/","",$countStatement);
             $countStatement = "SELECT count(*) as 'total' FROM (".trim($countStatement).") as t";
+
+            $logData["count_sql"] = SqlLogger::InterpolateQuery($countStatement,$query["input_parameters"]);
+
             $countStatement  = $conn->prepare($countStatement);
             $countResult = $countStatement->execute($query["input_parameters"]);
+
+
+
             if(!$countResult)
             {
                 throw new DAOException("Error al contar los registros. {$countStatement->errorInfo()[0]} - {$countStatement->errorInfo()[1]} - {$countStatement->errorInfo()[2]}");
@@ -521,12 +537,15 @@ abstract class CoreDAO implements ICoreDAO
             $total  = $countStatement->fetch(\PDO::FETCH_ASSOC)['total'];
             $this->paginationData["total"] = intval($total);
 
+            $logData["count_total"] = $total;
         }
 
         $this->items = [];
 
         if($rowCount)
         {
+            $logData["row_count"] = $rowCount;
+
             $fetchPosition = 0;
             while ($row = $statement->fetch(\PDO::FETCH_ASSOC))
             {
@@ -548,6 +567,8 @@ abstract class CoreDAO implements ICoreDAO
                 $this->items[] = $model;
             }
         }
+
+        SqlLogger::getInstance()->append($logData);
 
     }
 

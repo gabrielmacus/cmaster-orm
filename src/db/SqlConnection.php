@@ -7,6 +7,7 @@
  */
 
 namespace db;
+use PDO;
 
 /**
  * Clase de conexión a base de datos MySql
@@ -42,6 +43,7 @@ class SqlConnection  extends \PDO  implements IConnection
 
         parent::__construct($this->getDsn(),$this->getUser(),$this->getPassword(),$options);
     }
+
 
 
     public function getDsn()

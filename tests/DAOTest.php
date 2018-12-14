@@ -2503,6 +2503,30 @@ class DAOTest extends TestCase
 
 
 
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     * @param $productDAO \tests\product\ProductDAO
+     */
+    public function testLogger($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO,$productDAO)
+    {
+
+        $tag = new \tests\tag\Tag();
+        $tag->name = 'Tag demo';
+        $tagDAO->create($tag);
+
+        $logData =\db\SqlLogger::getInstance()->data;
+
+        file_put_contents("demo.json",json_encode($logData));
+
+       $this->assertEquals("\\tests\\tag\\Tag",end($logData)["model"]);
+    }
+
+
     public function daoProvider()
     {
         $connection = new \db\SqlConnection("mysql:host=localhost;dbname=tachyon_test", "root", "powersoccergbi");
