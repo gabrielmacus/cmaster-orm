@@ -1,3 +1,4 @@
 vendor/
 docs/
+composer.lock
 phpDocumentor.phar
