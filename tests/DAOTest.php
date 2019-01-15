@@ -26,6 +26,7 @@ class DAOTest extends TestCase
         $connection->exec("TRUNCATE tag");
         $connection->exec("TRUNCATE service_order_tag");
         $connection->exec("TRUNCATE multimedia");
+        $connection->exec("TRUNCATE product");
         $connection->exec("TRUNCATE multimedia_tag");
     }
 
@@ -761,6 +762,17 @@ class DAOTest extends TestCase
         //
 
 
+        //Guardo con array
+        $customer = new \tests\customer\Customer();
+        $customer->email ="rorocha@gmail.com";
+        $customer->name ="Roberto";
+        $customer->age = 67;
+        $customer->surname="Rocha";
+        $customer->zip_code=3200;
+        $customerDAO->create($customer);
+
+        $serviceOrder = new \tests\service_order\ServiceOrder();
+        $serviceOrder->description = 'Demo';
 
 
     }
@@ -2358,8 +2370,6 @@ class DAOTest extends TestCase
         $tag4->name = "Trabajo";
         $tagDAO->create($tag4);
 
-
-
         for($i=1;$i<=8;$i++){
 
            $image = new \tests\image\Image();
@@ -2494,9 +2504,92 @@ class DAOTest extends TestCase
         $this->assertEquals($images[1]->id,7);
         $this->assertEquals($images[2]->id,8);
 
+        //
+
+
+        $customer1 = new \tests\customer\Customer();
+        $customer1->name ="Name";
+        $customer1->surname = "Surname";
+        $customer1->email = "email@email.com";
+        $customer1->zip_code = 3000;
+        $customer1->age = 20;
+        $customerDAO->create($customer1);
+
+        $customer2 = new \tests\customer\Customer();
+        $customer2->name ="Name2";
+        $customer2->surname = "Surname2";
+        $customer2->email = "email2@email.com";
+        $customer2->zip_code = 2000;
+        $customer2->age = 40;
+        $customerDAO->create($customer2);
+
+
+        $so1= new \tests\service_order\ServiceOrder();
+        $so1->description = 'Service order 1';
+        $so1->customer = clone $customer1;
+        $serviceOrderDAO->create($so1);
+
+        $so2= new \tests\service_order\ServiceOrder();
+        $so2->description = 'Service order 2';
+        $so2->customer = clone $customer1;
+        $serviceOrderDAO->create($so2);
+
+        $so3= new \tests\service_order\ServiceOrder();
+        $so3->description = 'Service order 3';
+        $so3->customer = clone $customer2;
+        $serviceOrderDAO->create($so3);
+
+        $so4= new \tests\service_order\ServiceOrder();
+        $so4->description = 'Service order 4';
+        $so4->customer = clone $customer2;
+        $serviceOrderDAO->create($so4);
 
 
 
+        $serviceOrders = $serviceOrderDAO->read([
+            "order"=>["+id"],
+            "where"=>[
+                ["prop"=>"customer","where"=>[ ["prop"=>"zip_code","value"=>3000] ]]
+            ]
+        ]);
+
+        $this->assertCount(2,$serviceOrders);
+        $this->assertEquals($serviceOrders[0]->id,1);
+        $this->assertEquals($serviceOrders[1]->id,2);
+
+        $serviceOrders = $serviceOrderDAO->read([
+            "order"=>["+id"],
+            "where"=>[
+                ["prop"=>"customer","where"=>[ ["prop"=>"zip_code","value"=>2000] ]]
+            ]
+        ]);
+
+        $this->assertCount(2,$serviceOrders);
+        $this->assertEquals($serviceOrders[0]->id,3);
+        $this->assertEquals($serviceOrders[1]->id,4);
+
+
+
+        $customers = $customerDAO->read([
+            "order"=>["+id"],
+            "where"=>[
+                ["prop"=>"serviceOrders","where"=>[ ["prop"=>"description","value"=>'Service order 3'] ]]
+            ]
+        ]);
+
+        $this->assertCount(1,$customers);
+        $this->assertEquals($customers[0]->id,2);
+
+
+        $customers = $customerDAO->read([
+            "order"=>["+id"],
+            "where"=>[
+                ["prop"=>"serviceOrders","where"=>[ ["prop"=>"description","value"=>'Service order 1'] ]]
+            ]
+        ]);
+
+        $this->assertCount(1,$customers);
+        $this->assertEquals($customers[0]->id,1);
 
 
     }
@@ -2525,6 +2618,39 @@ class DAOTest extends TestCase
 
        $this->assertEquals("\\tests\\tag\\Tag",end($logData)["model"]);
     }
+
+    /**
+     * @dataProvider daoProvider
+     * @param $customerDAO \tests\customer\CustomerDAO
+     * @param $serviceOrderDAO \tests\service_order\ServiceOrderDAO
+     * @param $tagDAO \tests\tag\TagDAO
+     * @param $serviceOrderTagDAO \tests\service_order_tag\ServiceOrderTagDAO
+     * @param $imageDAO \tests\image\ImageDAO
+     * @param $productDAO \tests\product\ProductDAO
+     */
+   /* public function testSaveRelationshipFromArray($customerDAO,$serviceOrderDAO,$tagDAO,$serviceOrderTagDAO,$imageDAO,$productDAO)
+    {
+        $customer1 = new \tests\customer\Customer();
+        $customer1->name ="Name";
+        $customer1->surname = "Surname";
+        $customer1->email = "email@email.com";
+        $customer1->zip_code = 3000;
+        $customer1->age = 20;
+        $customerDAO->create($customer1);
+
+        $so = [
+            "description"=>"Demo demo",
+            "customer"=>$customer1->jsonSerialize()
+
+        ];
+
+        $serviceOrder = new \tests\service_order\ServiceOrder();
+        $serviceOrder->arrayToObject($so);
+        $serviceOrderDAO->create($serviceOrder);
+
+    }
+*/
+
 
 
     public function daoProvider()

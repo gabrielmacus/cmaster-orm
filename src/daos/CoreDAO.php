@@ -164,15 +164,13 @@ abstract class CoreDAO implements ICoreDAO
     {
         $input_parameters = [];
         $where = false;
-
-
         $annotations  = $this->processPopulateAnnotations($param["prop"]);
         if(!empty($annotations))
         {
             //Busqueda con join (?)
             $operator = empty($param["operator"]) || !in_array($param["operator"],['IN','NOT IN']) ? "IN" : $param["operator"];
 
-            if(!empty($annotations["link_dao"]))
+            if(isset($annotations["link_dao"]))
             {
                 //Many to many
                 /**
@@ -203,11 +201,32 @@ abstract class CoreDAO implements ICoreDAO
                 $input_parameters[] =  null;
                 $input_parameters[] = null;
 
+            }
+            elseif(isset($annotations["external_field"]))
+            {
+                /**
+                 * @var $ExternalDAO CoreDAO
+                 */
+                //TODO: Correct this
+                eval('$ExternalDAO = new '.$annotations["dao"].'($this->connection);');
+                $subquery = $ExternalDAO->processQuery(["where"=>$param["where"],"fields"=>[$annotations["external_field"]]]);
+                $where= $this->prefix."_id $operator ({$subquery["statement"]})";
+                $input_parameters = array_merge($input_parameters,$subquery["input_parameters"]);
+
+            }
+            else
+            {
+                /**
+                 * @var $ExternalDAO CoreDAO
+                 */
+                //TODO: Correct this
+                eval('$ExternalDAO = new '.$annotations["dao"].'($this->connection);');
+                $subquery = $ExternalDAO->processQuery(["where"=>$param["where"],"fields"=>["id"]]);
+                $where= $this->prefix."_{$param["prop"]} $operator ({$subquery["statement"]})";
+                $input_parameters = array_merge($input_parameters,$subquery["input_parameters"]);
 
 
             }
-
-            //TODO: Programar busqueda en muchos a uno y uno a muchos
 
         }
 
