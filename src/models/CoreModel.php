@@ -9,7 +9,7 @@
 namespace models;
 
 /**
- * Clase base para los modelos del sistema. Por normal general no deberia usar argumentos en el constructor.<br>
+ * Clase base para los modelos del sistema. Por norma general no deberia usar argumentos en el constructor.<br>
  * Si estoy asociando un elemento no existente a otro elemento, puedo guardar datos de la relacion utilizando una variable dinámica con el siguiente formato: relation_data_{nombre de la variable}
  * Class CoreModel
  * @package models
@@ -20,7 +20,6 @@ abstract class CoreModel implements ICoreModel,\JsonSerializable
     public $created_at;
     public $updated_at;
     public $deleted_at;
-    public $created_by;
     protected $relationshipsData =[];
 
 
