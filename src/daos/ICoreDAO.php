@@ -245,17 +245,19 @@ interface ICoreDAO
      * Funcion que se ejecuta después eliminar un elemento de la base de datos por su id
      * @param mixed $id Id eliminado
      * @param bool $softDelete Indica si fue eliminado de la base de datos, o seteado el campo deleted_at
+     * @param ICoreModel $model El modelo eliminado
      * @return void
      */
-    public function afterDeleteById($id,bool $softDelete);
+    public function afterDeleteById($id,bool $softDelete,ICoreModel $model);
 
     /**
      * Funcion que se ejecuta antes de eliminar un elemento de la base de datos por su id
      * @param mixed $id Id a eliminar
      * @param bool $softDelete Indica si fue eliminado de la base de datos, o seteado el campo deleted_at
+     * @param ICoreModel $model El modelo a eliminar
      * @return void
      */
-    public function beforeDeleteById($id,bool $softDelete);
+    public function beforeDeleteById($id,bool $softDelete,ICoreModel $model);
 
 
 

@@ -780,7 +780,12 @@ abstract class CoreDAO implements ICoreDAO
 
     public function deleteById($id,bool $softDelete = true)
     {
-        $this->beforeDeleteById($id,$softDelete);
+        /**
+         * @var $model CoreModel
+         */
+        $model = $this->readById($id);
+
+        $this->beforeDeleteById($id,$softDelete,$model);
 
         if(!$softDelete)
         {
@@ -788,10 +793,6 @@ abstract class CoreDAO implements ICoreDAO
         }
         else
         {
-            /**
-             * @var $model CoreModel
-             */
-            $model = $this->getModel();
             $now = new \DateTime();
             $model->deleted_at = $now->format("Y-m-d H:i:s");
             $query =$this->processUpsertDelete(["model"=>$model,"where"=>[["prop"=>"id","value"=>$id]],"action"=>"UPDATE"]);
@@ -799,7 +800,7 @@ abstract class CoreDAO implements ICoreDAO
 
         $this->execute($query);
 
-        $this->afterDeleteById($id,$softDelete);
+        $this->afterDeleteById($id,$softDelete,$model);
 
     }
 
@@ -1348,12 +1349,12 @@ abstract class CoreDAO implements ICoreDAO
         // TODO: Implement beforeUpdate() method.
     }
 
-    public function afterDeleteById($id, bool $softDelete)
+    public function afterDeleteById($id, bool $softDelete,ICoreModel $model)
     {
         // TODO: Implement afterDeleteById() method.
     }
 
-    public function beforeDeleteById($id, bool $softDelete)
+    public function beforeDeleteById($id, bool $softDelete,ICoreModel $model)
     {
         // TODO: Implement beforeDeleteById() method.
     }

@@ -85,28 +85,28 @@ class CustomerDAO extends CoreDAO
         }
     }
 
-    public function afterDeleteById($id, bool $softDelete)
+    public function afterDeleteById($id, bool $softDelete,ICoreModel $model)
     {
-        parent::afterDeleteById($id, $softDelete);
+        parent::afterDeleteById($id, $softDelete,$model);
 
         if(file_exists("created_on_after_delete_by_id.txt"))
         {
             unlink("created_on_after_delete_by_id.txt");
         }
 
-        file_put_contents("created_on_after_delete_by_id.txt","ok 1");
+        file_put_contents("created_on_after_delete_by_id.txt","Surname:".$model->surname);
     }
 
 
 
-    public function beforeDeleteById($id, bool $softDelete)
+    public function beforeDeleteById($id, bool $softDelete,ICoreModel $model)
     {
-        parent::beforeDeleteById($id, $softDelete);
+        parent::beforeDeleteById($id, $softDelete,$model);
 
         if(file_exists("created_on_before_delete_by_id.txt")) {
             unlink("created_on_before_delete_by_id.txt");
         }
-        file_put_contents("created_on_before_delete_by_id.txt","ok 2");
+        file_put_contents("created_on_before_delete_by_id.txt","Age:".$model->age);
     }
 
 

@@ -1662,8 +1662,8 @@ class DAOTest extends TestCase
         $customerDAO->create($customer);
         $customerDAO->deleteById($customer->id);
 
-        $this->assertEquals(file_get_contents("created_on_after_delete_by_id.txt"),"ok 1");
-        $this->assertEquals(file_get_contents("created_on_before_delete_by_id.txt"),"ok 2");
+        $this->assertEquals(file_get_contents("created_on_after_delete_by_id.txt"),"Surname:Wade");
+        $this->assertEquals(file_get_contents("created_on_before_delete_by_id.txt"),"Age:44");
 
     }
 
