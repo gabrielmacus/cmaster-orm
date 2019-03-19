@@ -772,9 +772,9 @@ abstract class CoreDAO implements ICoreDAO
             $model->$key = $item;
         }
 
-        $this->afterUpdate($model);
-
         $this->execute($query);
+
+        $this->afterUpdate($model);
 
     }
 
